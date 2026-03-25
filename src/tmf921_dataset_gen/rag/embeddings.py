@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Protocol
 
 from sklearn.feature_extraction.text import HashingVectorizer
 
@@ -47,7 +47,9 @@ class SentenceTransformerEmbeddingModel:
         return self.embed_documents([text])[0]
 
 
-def build_embedding_backend(model_name: str, allow_fallback: bool = True) -> EmbeddingBackend:
+def build_embedding_backend(model_name: str, allow_fallback: bool = True, prefer_hashing: bool = False) -> EmbeddingBackend:
+    if prefer_hashing:
+        return HashingEmbeddingModel()
     try:
         return SentenceTransformerEmbeddingModel(model_name)
     except Exception as exc:  # pragma: no cover - depends on local model availability

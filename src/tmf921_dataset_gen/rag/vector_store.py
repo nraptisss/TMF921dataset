@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import chromadb
+from chromadb.config import Settings as ChromaSettings
 
 from ..config import Settings
 from .embeddings import EmbeddingBackend
@@ -14,7 +15,10 @@ class ChromaVectorStore:
         self.settings = settings
         self.collection_name = collection_name
         self.settings.vector_index_dir.mkdir(parents=True, exist_ok=True)
-        self.client = chromadb.PersistentClient(path=str(self.settings.vector_index_dir))
+        self.client = chromadb.PersistentClient(
+            path=str(self.settings.vector_index_dir),
+            settings=ChromaSettings(anonymized_telemetry=False, allow_reset=True),
+        )
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"},

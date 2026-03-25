@@ -1,0 +1,22 @@
+﻿layers:
+  - business
+  - service
+  - resource
+traffic_profiles:
+  - urllc
+  - embb
+  - mmtc
+scenario_families:
+  - energy
+  - slicing
+  - predictive_assurance
+  - multi_domain
+  - conflict_negotiation
+  - resilience
+  - reporting
+  - closed_loop_autonomy
+domain_contexts:
+  - private campus
+  - ai-native ran
+  - multi-domain transport-core
+  - industrial automation

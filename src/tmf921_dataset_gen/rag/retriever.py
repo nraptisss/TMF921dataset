@@ -25,7 +25,10 @@ SOURCE_PRIORITY = [
 class BalancedRetriever:
     def __init__(self, settings: Settings, embedder: EmbeddingBackend | None = None) -> None:
         self.settings = settings
-        self.embedder = embedder or build_embedding_backend(settings.embedding_model)
+        self.embedder = embedder or build_embedding_backend(
+            settings.embedding_model,
+            prefer_hashing=settings.inference_backend == "mock",
+        )
         self.store = ChromaVectorStore(settings)
 
     def build(self) -> int:
