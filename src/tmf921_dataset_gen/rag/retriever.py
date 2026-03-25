@@ -1,0 +1,65 @@
+﻿from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from ..config import Settings
+from ..ingestion.corpus_builder import build_corpus
+from .embeddings import EmbeddingBackend, build_embedding_backend
+from .vector_store import ChromaVectorStore
+
+
+SOURCE_PRIORITY = [
+    "seed",
+    "oas_example",
+    "oas_schema",
+    "tr290_docx",
+    "tr290_pdf",
+    "tr290_markdown",
+    "idan_reference",
+    "postman_operation",
+]
+
+
+class BalancedRetriever:
+    def __init__(self, settings: Settings, embedder: EmbeddingBackend | None = None) -> None:
+        self.settings = settings
+        self.embedder = embedder or build_embedding_backend(settings.embedding_model)
+        self.store = ChromaVectorStore(settings)
+
+    def build(self) -> int:
+        chunks_path = self.settings.repo.normalized_dir / "corpus" / "corpus_chunks.jsonl"
+        if chunks_path.exists():
+            documents = [json.loads(line) for line in chunks_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        else:
+            build_corpus(self.settings)
+            documents = [json.loads(line) for line in chunks_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        return self.store.index_documents(documents, self.embedder)
+
+    def retrieve(self, query_text: str, top_k: int = 8, per_source: int = 2) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        for source_type in SOURCE_PRIORITY:
+            source_results = self.store.query(
+                query_text,
+                self.embedder,
+                top_k=per_source,
+                where={"source_type": source_type},
+            )
+            for row in source_results:
+                if row["id"] in seen_ids:
+                    continue
+                results.append(row)
+                seen_ids.add(row["id"])
+                if len(results) >= top_k:
+                    return results[:top_k]
+        if len(results) < top_k:
+            for row in self.store.query(query_text, self.embedder, top_k=top_k * 2):
+                if row["id"] in seen_ids:
+                    continue
+                results.append(row)
+                seen_ids.add(row["id"])
+                if len(results) >= top_k:
+                    break
+        return results[:top_k]
