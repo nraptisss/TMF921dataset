@@ -1,0 +1,476 @@
+[
+  {
+    "id": "seed-001",
+    "source_type": "seed",
+    "title": "In my 6G private campus network, ensure ultra-reliable low-latency communication for 500 industrial robots with end-to-end latency below 1 ms and reliability of 99.9999% while keeping energy consumption under 500 kWh per day.",
+    "text": "{\n  \"nl_intent\": \"In my 6G private campus network, ensure ultra-reliable low-latency communication for 500 industrial robots with end-to-end latency below 1 ms and reliability of 99.9999% while keeping energy consumption under 500 kWh per day.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"URLLC-Robots-Campus\",\n    \"description\": \"Ultra-reliable low-latency intent for industrial robots in 6G campus\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"@baseType\": \"IntentExpression\",\n      \"iri\": \"tio:expression-uuid-001\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:Slice\",\n          \"name\": \"URLLC-Robots\"\n        },\n        \"latency\": {\n          \"value\": 1,\n          \"unit\": \"ms\"\n        },\n        \"reliability\": 0.999999\n      }\n    },\n    \"priority\": \"high\",\n    \"context\": \"6G-campus-industrial\",\n    \"lifecycleStatus\": \"active\",\n    \"version\": \"1.0\"\n  },\n  \"notes\": \"Classic URLLC 6G use-case; matches TR290 DeliveryExpectation\"\n}",
+    "metadata": {
+      "seed_id": "seed-001",
+      "serialization": "json-ld",
+      "notes": "Classic URLLC 6G use-case; matches TR290 DeliveryExpectation"
+    },
+    "nl_intent": "In my 6G private campus network, ensure ultra-reliable low-latency communication for 500 industrial robots with end-to-end latency below 1 ms and reliability of 99.9999% while keeping energy consumption under 500 kWh per day.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "URLLC-Robots-Campus",
+      "description": "Ultra-reliable low-latency intent for industrial robots in 6G campus",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "@baseType": "IntentExpression",
+        "iri": "tio:expression-uuid-001",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:Slice",
+            "name": "URLLC-Robots"
+          },
+          "latency": {
+            "value": 1,
+            "unit": "ms"
+          },
+          "reliability": 0.999999
+        }
+      },
+      "priority": "high",
+      "context": "6G-campus-industrial",
+      "lifecycleStatus": "active",
+      "version": "1.0"
+    }
+  },
+  {
+    "id": "seed-002",
+    "source_type": "seed",
+    "title": "For the AI-orchestrated 6G core in my campus, minimize total energy consumption of all network functions while maintaining at least 10 Gbps aggregate throughput and 99.99% availability.",
+    "text": "{\n  \"nl_intent\": \"For the AI-orchestrated 6G core in my campus, minimize total energy consumption of all network functions while maintaining at least 10 Gbps aggregate throughput and 99.99% availability.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Energy-Aware-Core\",\n    \"description\": \"Energy minimization with QoS guardrails\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-002\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:NFSet\",\n          \"name\": \"Core-NFs\"\n        },\n        \"throughput\": {\n          \"value\": 10,\n          \"unit\": \"Gbps\"\n        },\n        \"availability\": 0.9999\n      },\n      \"icm:UtilityFunction\": {\n        \"name\": \"minEnergy\",\n        \"weight\": 0.8\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-energy-optimization\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Energy vs performance trade-off; uses utility function per TR290\"\n}",
+    "metadata": {
+      "seed_id": "seed-002",
+      "serialization": "json-ld",
+      "notes": "Energy vs performance trade-off; uses utility function per TR290"
+    },
+    "nl_intent": "For the AI-orchestrated 6G core in my campus, minimize total energy consumption of all network functions while maintaining at least 10 Gbps aggregate throughput and 99.99% availability.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Energy-Aware-Core",
+      "description": "Energy minimization with QoS guardrails",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-002",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:NFSet",
+            "name": "Core-NFs"
+          },
+          "throughput": {
+            "value": 10,
+            "unit": "Gbps"
+          },
+          "availability": 0.9999
+        },
+        "icm:UtilityFunction": {
+          "name": "minEnergy",
+          "weight": 0.8
+        }
+      },
+      "priority": "medium",
+      "context": "6G-energy-optimization",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-003",
+    "source_type": "seed",
+    "title": "Deploy a new eMBB slice for 2000 AR/VR users in the 6G campus with guaranteed 500 Mbps per user and 99.999% reliability, but only if it does not exceed 30% of total RAN resources.",
+    "text": "{\n  \"nl_intent\": \"Deploy a new eMBB slice for 2000 AR/VR users in the 6G campus with guaranteed 500 Mbps per user and 99.999% reliability, but only if it does not exceed 30% of total RAN resources.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"eMBB-ARVR-Slice\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-003\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:Slice\",\n          \"name\": \"eMBB-ARVR\"\n        },\n        \"throughputPerUser\": {\n          \"value\": 500,\n          \"unit\": \"Mbps\"\n        },\n        \"reliability\": 0.99999\n      },\n      \"icm:Constraint\": {\n        \"resourceLimit\": \"30% RAN\"\n      }\n    },\n    \"priority\": \"high\",\n    \"context\": \"6G-campus-eMBB\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Resource-constrained slicing\"\n}",
+    "metadata": {
+      "seed_id": "seed-003",
+      "serialization": "json-ld",
+      "notes": "Resource-constrained slicing"
+    },
+    "nl_intent": "Deploy a new eMBB slice for 2000 AR/VR users in the 6G campus with guaranteed 500 Mbps per user and 99.999% reliability, but only if it does not exceed 30% of total RAN resources.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "eMBB-ARVR-Slice",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-003",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:Slice",
+            "name": "eMBB-ARVR"
+          },
+          "throughputPerUser": {
+            "value": 500,
+            "unit": "Mbps"
+          },
+          "reliability": 0.99999
+        },
+        "icm:Constraint": {
+          "resourceLimit": "30% RAN"
+        }
+      },
+      "priority": "high",
+      "context": "6G-campus-eMBB",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-004",
+    "source_type": "seed",
+    "title": "In case of detected congestion in the 6G campus RAN, automatically reconfigure mMTC slices for 10000 IoT sensors to reduce their duty cycle to 10% while preserving 99.9% packet delivery ratio.",
+    "text": "{\n  \"nl_intent\": \"In case of detected congestion in the 6G campus RAN, automatically reconfigure mMTC slices for 10000 IoT sensors to reduce their duty cycle to 10% while preserving 99.9% packet delivery ratio.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Congestion-mMTC-Adapt\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-004\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:Slice\",\n          \"name\": \"mMTC-IoT\"\n        },\n        \"dutyCycle\": 0.1,\n        \"deliveryRatio\": 0.999\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-congestion-response\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Dynamic adaptation intent\"\n}",
+    "metadata": {
+      "seed_id": "seed-004",
+      "serialization": "json-ld",
+      "notes": "Dynamic adaptation intent"
+    },
+    "nl_intent": "In case of detected congestion in the 6G campus RAN, automatically reconfigure mMTC slices for 10000 IoT sensors to reduce their duty cycle to 10% while preserving 99.9% packet delivery ratio.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Congestion-mMTC-Adapt",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-004",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:Slice",
+            "name": "mMTC-IoT"
+          },
+          "dutyCycle": 0.1,
+          "deliveryRatio": 0.999
+        }
+      },
+      "priority": "medium",
+      "context": "6G-congestion-response",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-005",
+    "source_type": "seed",
+    "title": "Ensure predictive assurance for all critical 6G URLLC slices: any predicted latency violation >0.5 ms must trigger proactive resource reallocation within 100 ms.",
+    "text": "{\n  \"nl_intent\": \"Ensure predictive assurance for all critical 6G URLLC slices: any predicted latency violation >0.5 ms must trigger proactive resource reallocation within 100 ms.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Predictive-Assurance-URLLC\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-005\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:Slice\",\n          \"name\": \"URLLC-Critical\"\n        },\n        \"proactiveAction\": \"reallocate\",\n        \"latencyThreshold\": 0.5,\n        \"reactionTime\": 100\n      }\n    },\n    \"priority\": \"high\",\n    \"context\": \"6G-predictive\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Assurance-focused with timing\"\n}",
+    "metadata": {
+      "seed_id": "seed-005",
+      "serialization": "json-ld",
+      "notes": "Assurance-focused with timing"
+    },
+    "nl_intent": "Ensure predictive assurance for all critical 6G URLLC slices: any predicted latency violation >0.5 ms must trigger proactive resource reallocation within 100 ms.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Predictive-Assurance-URLLC",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-005",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:Slice",
+            "name": "URLLC-Critical"
+          },
+          "proactiveAction": "reallocate",
+          "latencyThreshold": 0.5,
+          "reactionTime": 100
+        }
+      },
+      "priority": "high",
+      "context": "6G-predictive",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-006",
+    "source_type": "seed",
+    "title": "Create two conflicting intents: one for maximum throughput in eMBB and one for minimum energy; resolve via negotiation with priority to energy if carbon budget is exceeded.",
+    "text": "{\n  \"nl_intent\": \"Create two conflicting intents: one for maximum throughput in eMBB and one for minimum energy; resolve via negotiation with priority to energy if carbon budget is exceeded.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Conflict-Energy-vs-Throughput\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-006\",\n      \"icm:DeliveryExpectation\": [\n        {\n          \"target\": \"eMBB\",\n          \"throughput\": \"max\"\n        },\n        {\n          \"target\": \"Core\",\n          \"energy\": \"min\"\n        }\n      ],\n      \"icm:NegotiationRule\": {\n        \"priority\": \"energy\",\n        \"condition\": \"carbonBudgetExceeded\"\n      }\n    },\n    \"priority\": \"high\",\n    \"context\": \"6G-conflict-negotiation\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Explicit conflict example for testing negotiation\"\n}",
+    "metadata": {
+      "seed_id": "seed-006",
+      "serialization": "json-ld",
+      "notes": "Explicit conflict example for testing negotiation"
+    },
+    "nl_intent": "Create two conflicting intents: one for maximum throughput in eMBB and one for minimum energy; resolve via negotiation with priority to energy if carbon budget is exceeded.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Conflict-Energy-vs-Throughput",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-006",
+        "icm:DeliveryExpectation": [
+          {
+            "target": "eMBB",
+            "throughput": "max"
+          },
+          {
+            "target": "Core",
+            "energy": "min"
+          }
+        ],
+        "icm:NegotiationRule": {
+          "priority": "energy",
+          "condition": "carbonBudgetExceeded"
+        }
+      },
+      "priority": "high",
+      "context": "6G-conflict-negotiation",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-007",
+    "source_type": "seed",
+    "title": "In the 6G multi-domain campus (RAN + transport + core), guarantee end-to-end latency <2 ms for 100 autonomous vehicles with 99.9999% reliability across all domains.",
+    "text": "{\n  \"nl_intent\": \"In the 6G multi-domain campus (RAN + transport + core), guarantee end-to-end latency <2 ms for 100 autonomous vehicles with 99.9999% reliability across all domains.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"MultiDomain-V2X-URLLC\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-007\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:EndToEndPath\"\n        },\n        \"latency\": 2,\n        \"reliability\": 0.999999\n      }\n    },\n    \"priority\": \"critical\",\n    \"context\": \"6G-multi-domain\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Cross-domain 6G V2X\"\n}",
+    "metadata": {
+      "seed_id": "seed-007",
+      "serialization": "json-ld",
+      "notes": "Cross-domain 6G V2X"
+    },
+    "nl_intent": "In the 6G multi-domain campus (RAN + transport + core), guarantee end-to-end latency <2 ms for 100 autonomous vehicles with 99.9999% reliability across all domains.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "MultiDomain-V2X-URLLC",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-007",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:EndToEndPath"
+          },
+          "latency": 2,
+          "reliability": 0.999999
+        }
+      },
+      "priority": "critical",
+      "context": "6G-multi-domain",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-008",
+    "source_type": "seed",
+    "title": "For my 6G testbed, report on intent fulfillment every 5 minutes and notify if any KPI deviates more than 5% from target.",
+    "text": "{\n  \"nl_intent\": \"For my 6G testbed, report on intent fulfillment every 5 minutes and notify if any KPI deviates more than 5% from target.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Intent-Reporting-Testbed\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-008\",\n      \"icm:ReportingExpectation\": {\n        \"interval\": \"5m\",\n        \"deviationThreshold\": 0.05\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-testbed-monitoring\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Reporting intent per TR290\"\n}",
+    "metadata": {
+      "seed_id": "seed-008",
+      "serialization": "json-ld",
+      "notes": "Reporting intent per TR290"
+    },
+    "nl_intent": "For my 6G testbed, report on intent fulfillment every 5 minutes and notify if any KPI deviates more than 5% from target.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Intent-Reporting-Testbed",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-008",
+        "icm:ReportingExpectation": {
+          "interval": "5m",
+          "deviationThreshold": 0.05
+        }
+      },
+      "priority": "medium",
+      "context": "6G-testbed-monitoring",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-009",
+    "source_type": "seed",
+    "title": "Suspend all non-critical slices in the 6G campus during a power outage alert while preserving URLLC slices at full capacity.",
+    "text": "{\n  \"nl_intent\": \"Suspend all non-critical slices in the 6G campus during a power outage alert while preserving URLLC slices at full capacity.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Power-Outage-Priority\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-009\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": \"URLLC\",\n        \"action\": \"preserve\"\n      },\n      \"icm:Constraint\": {\n        \"target\": \"non-critical\",\n        \"action\": \"suspend\"\n      }\n    },\n    \"priority\": \"critical\",\n    \"context\": \"6G-resilience\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Lifecycle / conditional intent\"\n}",
+    "metadata": {
+      "seed_id": "seed-009",
+      "serialization": "json-ld",
+      "notes": "Lifecycle / conditional intent"
+    },
+    "nl_intent": "Suspend all non-critical slices in the 6G campus during a power outage alert while preserving URLLC slices at full capacity.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Power-Outage-Priority",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-009",
+        "icm:DeliveryExpectation": {
+          "target": "URLLC",
+          "action": "preserve"
+        },
+        "icm:Constraint": {
+          "target": "non-critical",
+          "action": "suspend"
+        }
+      },
+      "priority": "critical",
+      "context": "6G-resilience",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-010",
+    "source_type": "seed",
+    "title": "Optimize 6G RAN beamforming for 99.99% coverage in the campus while limiting total transmit power to 40 dBm per site.",
+    "text": "{\n  \"nl_intent\": \"Optimize 6G RAN beamforming for 99.99% coverage in the campus while limiting total transmit power to 40 dBm per site.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Beamforming-Power-Opt\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-010\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": {\n          \"@type\": \"sli:RANBeam\"\n        },\n        \"coverage\": 0.9999,\n        \"txPowerLimit\": {\n          \"value\": 40,\n          \"unit\": \"dBm\"\n        }\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-RAN-optimization\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"RAN-specific 6G optimization\"\n}",
+    "metadata": {
+      "seed_id": "seed-010",
+      "serialization": "json-ld",
+      "notes": "RAN-specific 6G optimization"
+    },
+    "nl_intent": "Optimize 6G RAN beamforming for 99.99% coverage in the campus while limiting total transmit power to 40 dBm per site.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Beamforming-Power-Opt",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-010",
+        "icm:DeliveryExpectation": {
+          "target": {
+            "@type": "sli:RANBeam"
+          },
+          "coverage": 0.9999,
+          "txPowerLimit": {
+            "value": 40,
+            "unit": "dBm"
+          }
+        }
+      },
+      "priority": "medium",
+      "context": "6G-RAN-optimization",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-011",
+    "source_type": "seed",
+    "title": "Ensure zero-touch failover for all 6G intents: if any intent report shows degradation, automatically migrate to backup resources within 50 ms.",
+    "text": "{\n  \"nl_intent\": \"Ensure zero-touch failover for all 6G intents: if any intent report shows degradation, automatically migrate to backup resources within 50 ms.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Zero-Touch-Failover\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-011\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": \"AllIntents\",\n        \"failoverTime\": 50,\n        \"action\": \"migrate\"\n      }\n    },\n    \"priority\": \"high\",\n    \"context\": \"6G-autonomy\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Autonomous closed-loop\"\n}",
+    "metadata": {
+      "seed_id": "seed-011",
+      "serialization": "json-ld",
+      "notes": "Autonomous closed-loop"
+    },
+    "nl_intent": "Ensure zero-touch failover for all 6G intents: if any intent report shows degradation, automatically migrate to backup resources within 50 ms.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Zero-Touch-Failover",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-011",
+        "icm:DeliveryExpectation": {
+          "target": "AllIntents",
+          "failoverTime": 50,
+          "action": "migrate"
+        }
+      },
+      "priority": "high",
+      "context": "6G-autonomy",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-012",
+    "source_type": "seed",
+    "title": "In the 6G campus, allow dynamic negotiation between two intents: one for maximum user density and one for minimum interference; accept the compromise that maximizes overall utility.",
+    "text": "{\n  \"nl_intent\": \"In the 6G campus, allow dynamic negotiation between two intents: one for maximum user density and one for minimum interference; accept the compromise that maximizes overall utility.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Negotiation-Density-vs-Interference\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-012\",\n      \"icm:NegotiationRule\": {\n        \"parameters\": [\n          \"userDensity\",\n          \"interference\"\n        ],\n        \"objective\": \"maxUtility\"\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-negotiation\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Negotiation test case\"\n}",
+    "metadata": {
+      "seed_id": "seed-012",
+      "serialization": "json-ld",
+      "notes": "Negotiation test case"
+    },
+    "nl_intent": "In the 6G campus, allow dynamic negotiation between two intents: one for maximum user density and one for minimum interference; accept the compromise that maximizes overall utility.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Negotiation-Density-vs-Interference",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-012",
+        "icm:NegotiationRule": {
+          "parameters": [
+            "userDensity",
+            "interference"
+          ],
+          "objective": "maxUtility"
+        }
+      },
+      "priority": "medium",
+      "context": "6G-negotiation",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-013",
+    "source_type": "seed",
+    "title": "Provide a partial intent for testing: guarantee only reliability >99.999% for URLLC robots; all other KPIs are best-effort.",
+    "text": "{\n  \"nl_intent\": \"Provide a partial intent for testing: guarantee only reliability >99.999% for URLLC robots; all other KPIs are best-effort.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Partial-Intent-URLLC\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-013\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": \"URLLC-Robots\",\n        \"reliability\": 0.99999,\n        \"otherKPIs\": \"bestEffort\"\n      }\n    },\n    \"priority\": \"low\",\n    \"context\": \"6G-partial-spec\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Partial specification edge case\"\n}",
+    "metadata": {
+      "seed_id": "seed-013",
+      "serialization": "json-ld",
+      "notes": "Partial specification edge case"
+    },
+    "nl_intent": "Provide a partial intent for testing: guarantee only reliability >99.999% for URLLC robots; all other KPIs are best-effort.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Partial-Intent-URLLC",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-013",
+        "icm:DeliveryExpectation": {
+          "target": "URLLC-Robots",
+          "reliability": 0.99999,
+          "otherKPIs": "bestEffort"
+        }
+      },
+      "priority": "low",
+      "context": "6G-partial-spec",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-014",
+    "source_type": "seed",
+    "title": "For AI-native 6G orchestration, translate this natural language request into a valid TMF921 intent that can be directly posted to the /intent endpoint.",
+    "text": "{\n  \"nl_intent\": \"For AI-native 6G orchestration, translate this natural language request into a valid TMF921 intent that can be directly posted to the /intent endpoint.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"AI-Orchestration-Meta\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-014\",\n      \"icm:DeliveryExpectation\": {\n        \"target\": \"Orchestrator\",\n        \"action\": \"translateNLtoTMF921\"\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-AI-meta\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Meta-intent for your own pipeline\"\n}",
+    "metadata": {
+      "seed_id": "seed-014",
+      "serialization": "json-ld",
+      "notes": "Meta-intent for your own pipeline"
+    },
+    "nl_intent": "For AI-native 6G orchestration, translate this natural language request into a valid TMF921 intent that can be directly posted to the /intent endpoint.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "AI-Orchestration-Meta",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-014",
+        "icm:DeliveryExpectation": {
+          "target": "Orchestrator",
+          "action": "translateNLtoTMF921"
+        }
+      },
+      "priority": "medium",
+      "context": "6G-AI-meta",
+      "lifecycleStatus": "active"
+    }
+  },
+  {
+    "id": "seed-015",
+    "source_type": "seed",
+    "title": "Monitor and report fulfillment of all active intents in the 6G campus every 60 seconds via the hub subscription mechanism.",
+    "text": "{\n  \"nl_intent\": \"Monitor and report fulfillment of all active intents in the 6G campus every 60 seconds via the hub subscription mechanism.\",\n  \"tmf921_intent\": {\n    \"@type\": \"Intent\",\n    \"name\": \"Continuous-Monitoring\",\n    \"expression\": {\n      \"@type\": \"tio:IntentExpression\",\n      \"iri\": \"tio:expression-uuid-015\",\n      \"icm:ReportingExpectation\": {\n        \"interval\": \"60s\",\n        \"channel\": \"hub\"\n      }\n    },\n    \"priority\": \"medium\",\n    \"context\": \"6G-monitoring\",\n    \"lifecycleStatus\": \"active\"\n  },\n  \"notes\": \"Hub + reporting integration\"\n}",
+    "metadata": {
+      "seed_id": "seed-015",
+      "serialization": "json-ld",
+      "notes": "Hub + reporting integration"
+    },
+    "nl_intent": "Monitor and report fulfillment of all active intents in the 6G campus every 60 seconds via the hub subscription mechanism.",
+    "tmf921_intent": {
+      "@type": "Intent",
+      "name": "Continuous-Monitoring",
+      "expression": {
+        "@type": "tio:IntentExpression",
+        "iri": "tio:expression-uuid-015",
+        "icm:ReportingExpectation": {
+          "interval": "60s",
+          "channel": "hub"
+        }
+      },
+      "priority": "medium",
+      "context": "6G-monitoring",
+      "lifecycleStatus": "active"
+    }
+  }
+]
