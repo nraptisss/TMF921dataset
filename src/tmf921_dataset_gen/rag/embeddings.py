@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
@@ -35,10 +35,10 @@ class HashingEmbeddingModel:
 
 
 class SentenceTransformerEmbeddingModel:
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, local_files_only: bool = False) -> None:
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(model_name, local_files_only=local_files_only)
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.model.encode(texts, normalize_embeddings=True).tolist()
@@ -47,11 +47,11 @@ class SentenceTransformerEmbeddingModel:
         return self.embed_documents([text])[0]
 
 
-def build_embedding_backend(model_name: str, allow_fallback: bool = True, prefer_hashing: bool = False) -> EmbeddingBackend:
+def build_embedding_backend(model_name: str, allow_fallback: bool = True, prefer_hashing: bool = False, local_files_only: bool = False) -> EmbeddingBackend:
     if prefer_hashing:
         return HashingEmbeddingModel()
     try:
-        return SentenceTransformerEmbeddingModel(model_name)
+        return SentenceTransformerEmbeddingModel(model_name, local_files_only=local_files_only)
     except Exception as exc:  # pragma: no cover - depends on local model availability
         if not allow_fallback:
             raise

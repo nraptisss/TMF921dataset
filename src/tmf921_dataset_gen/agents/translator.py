@@ -1,11 +1,13 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import json
 import re
 from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
 from ..config import Settings
+from ..llm import LLMRouter
 from ..models.generated.tmf921_models import IntentFVO
 from ..validation.jsonschema_validator import TMFJsonSchemaValidator
 from ..validation.semantic_score import extract_kpis
@@ -25,6 +27,7 @@ class TranslatorAgent:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.validator = TMFJsonSchemaValidator(settings, "Intent_FVO")
+        self.router = LLMRouter(settings)
 
     def choose_serialization(self, sample_index: int) -> str:
         threshold = int(self.settings.jsonld_ratio * 100)
@@ -39,6 +42,33 @@ class TranslatorAgent:
         if taxonomy_target["scenario_family"] in {"energy", "reporting"}:
             return "medium"
         return "high"
+
+    def _llm_translation_options(self, nl_intent: str, taxonomy_target: dict[str, Any], kpis: dict[str, Any], sample_index: int) -> dict[str, Any]:
+        if not self.router.supports_generation():
+            return {}
+        default_serialization = self.choose_serialization(sample_index)
+        prompt = f"""
+You are planning a TMF921 translation step for a local telecom intent dataset generator.
+Return JSON only with these optional keys:
+{{"name": "...", "context": "...", "priority": "critical|high|medium|low", "serialization": "json-ld|turtle"}}
+Do not invent KPI values or change the request meaning.
+
+Taxonomy target:
+{json.dumps(taxonomy_target, indent=2)}
+
+KPI summary:
+{json.dumps(kpis, indent=2)}
+
+Default serialization: {default_serialization}
+
+Natural-language intent:
+{nl_intent}
+""".strip()
+        try:
+            response = self.router.generate_json(prompt, model=self.settings.bulk_model, temperature=0.2)
+            return response if isinstance(response, dict) else {}
+        except Exception:
+            return {}
 
     def _expression_params(self, kpis: dict[str, Any], taxonomy_target: dict[str, Any]) -> dict[str, Any]:
         params: dict[str, Any] = {
@@ -143,8 +173,10 @@ class TranslatorAgent:
         sample_index: int,
     ) -> dict[str, Any]:
         kpis = extract_kpis(nl_intent)
-        slug = self._slugify(f"{taxonomy_target['taxonomy_category']}-{sample_index}")
-        serialization = self.choose_serialization(sample_index)
+        translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, sample_index)
+        slug_source = translation_hints.get("name") or f"{taxonomy_target['taxonomy_category']}-{sample_index}"
+        slug = self._slugify(slug_source)
+        serialization = translation_hints.get("serialization") or self.choose_serialization(sample_index)
         expression = (
             self._build_jsonld_expression(slug, kpis, taxonomy_target)
             if serialization == "json-ld"
@@ -152,10 +184,10 @@ class TranslatorAgent:
         )
         payload = {
             "@type": "Intent" if serialization == "json-ld" else "ProbeIntent",
-            "name": slug.replace("-", " ").title().replace(" ", "-"),
+            "name": str(translation_hints.get("name") or slug.replace("-", " ").title().replace(" ", "-")),
             "description": nl_intent,
-            "priority": self._priority_for(taxonomy_target),
-            "context": f"6g-{taxonomy_target['layer']}-{taxonomy_target['scenario_family']}",
+            "priority": str(translation_hints.get("priority") or self._priority_for(taxonomy_target)),
+            "context": str(translation_hints.get("context") or f"6g-{taxonomy_target['layer']}-{taxonomy_target['scenario_family']}"),
             "version": "1.0",
             "lifecycleStatus": "active",
             "expression": expression,
@@ -173,6 +205,7 @@ class TranslatorAgent:
                 "seed_id": seed_ids[0] if seed_ids else None,
                 "generation_timestamp": datetime.now(timezone.utc),
                 "retrieved_context_ids": [row["id"] for row in retrieved_context],
+                "translation_backend": self.settings.inference_backend,
             },
         }
 

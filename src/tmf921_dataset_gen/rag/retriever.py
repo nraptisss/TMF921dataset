@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -26,8 +26,9 @@ class BalancedRetriever:
     def __init__(self, settings: Settings, embedder: EmbeddingBackend | None = None) -> None:
         self.settings = settings
         self.embedder = embedder or build_embedding_backend(
-            settings.embedding_model,
+            settings.resolve_embedding_model(),
             prefer_hashing=settings.inference_backend == "mock",
+            local_files_only=settings.is_local_model_backend and settings.local_files_only,
         )
         self.store = ChromaVectorStore(settings)
 

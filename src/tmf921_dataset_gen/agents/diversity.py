@@ -1,10 +1,12 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import json
 import random
 from typing import Any
 
 from ..config import Settings
 from ..ingestion.seed_loader import load_seed_records
+from ..llm import LLMRouter
 
 
 SCENARIO_HINTS = {
@@ -23,6 +25,7 @@ class DiversityAgent:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.seeds = load_seed_records(settings)
+        self.router = LLMRouter(settings)
 
     def _matching_seed(self, scenario_family: str) -> dict[str, Any]:
         keywords = scenario_family.replace("_", " ")
@@ -75,11 +78,46 @@ class DiversityAgent:
         fragments.append(f"for the {scenario} scenario.")
         return ", ".join(fragments[:-1]) + " " + fragments[-1]
 
+    def _llm_rewrite(self, baseline_intent: str, taxonomy_target: dict[str, Any], seed: dict[str, Any], kpis: dict[str, Any]) -> str:
+        if not self.router.supports_generation():
+            return baseline_intent
+        prompt = f"""
+You are generating a realistic 6G telecom natural-language intent for synthetic data.
+Preserve every numeric KPI, unit, and hard constraint exactly.
+Rewrite the baseline request into a more natural production-style operator request.
+Return JSON only with this shape:
+{{"nl_intent": "..."}}
+
+Taxonomy target:
+{json.dumps(taxonomy_target, indent=2)}
+
+Seed example:
+{seed['title']}
+
+Seed notes:
+{seed['metadata'].get('notes')}
+
+KPI payload:
+{json.dumps(kpis, indent=2)}
+
+Baseline intent:
+{baseline_intent}
+""".strip()
+        try:
+            response = self.router.generate_json(prompt, model=self.settings.reasoning_model, temperature=0.7)
+            candidate = str(response.get("nl_intent", "")).strip()
+            if candidate:
+                return candidate
+        except Exception:
+            pass
+        return baseline_intent
+
     def generate(self, taxonomy_target: dict[str, Any], sample_index: int) -> dict[str, Any]:
         rng = random.Random(self.settings.random_seed + sample_index)
         seed = self._matching_seed(taxonomy_target["scenario_family"])
         kpis = self._sample_kpis(taxonomy_target, rng)
-        nl_intent = self._render_nl(taxonomy_target, kpis, rng)
+        baseline_intent = self._render_nl(taxonomy_target, kpis, rng)
+        nl_intent = self._llm_rewrite(baseline_intent, taxonomy_target, seed, kpis)
         return {
             "nl_intent": nl_intent,
             "seed_ids": [seed["id"]],
@@ -87,5 +125,6 @@ class DiversityAgent:
                 "taxonomy_category": taxonomy_target["taxonomy_category"],
                 "kpis": kpis,
                 "seed_id": seed["id"],
+                "generation_backend": self.settings.inference_backend,
             },
         }

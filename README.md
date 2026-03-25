@@ -1,50 +1,73 @@
-﻿# TMF921 Dataset Generator
+# TMF921 Dataset Generator
 
 Synthetic, production-oriented pipeline for generating natural-language intents paired with TMF921 v5.0 `Intent_FVO` payloads.
 
-## What It Builds
+## What Changed For Local GPU Servers
 
-- TMF921/OpenAPI schema registry and normalized Postman operation corpus
-- TR290 document extraction to Markdown for semantic grounding
-- Seed and optional IDAN reference normalization
-- Chroma-backed RAG with embedding fallback for offline/local runs
-- LangGraph workflow with `DiversityAgent`, `TranslatorAgent`, and `CriticRefinementAgent`
-- Export to JSONL plus Hugging Face `Dataset.save_to_disk()` when the `datasets` package is installed
-- Optional Streamlit dashboard for browsing generated pairs
+This project can now run fully locally without OpenAI, Anthropic, Together, or any other external model API.
 
-## Repository Layout
+- `INFERENCE_BACKEND=local-transformers` runs reasoning and bulk generation with local Hugging Face models loaded directly on the server.
+- `LOCAL_REASONING_MODEL_PATH`, `LOCAL_BULK_MODEL_PATH`, and `LOCAL_EMBEDDING_MODEL_PATH` let you pin the exact on-disk model artifacts.
+- Preflight now validates local model paths and CUDA/runtime prerequisites.
+- The agents will use local models when configured, but still retain deterministic heuristic fallbacks so the pipeline remains testable offline.
 
-- `src/tmf921_dataset_gen/`: application code
-- `tests/`: unit and integration tests
-- `artifacts/`: normalized schemas, corpora, indexes, and reports
-- `output/test_dataset/`: sample-run output
+## Recommended RTX 6000 Ada 50GB Profile
+
+Recommended local model split:
+
+- Reasoning model: `Qwen/Qwen2.5-14B-Instruct`
+- Bulk generation model: `Qwen/Qwen2.5-7B-Instruct`
+- Embeddings: `BAAI/bge-large-en-v1.5`
+- Precision: `bfloat16`
+- Quantization: optional 4-bit if you want to reduce VRAM pressure further on Linux
+
+This fits well on a 50 GB Ada card when you run one generation model at a time.
 
 ## Installation
 
+### Base environment
+
 ```bash
 python -m venv .venv
-. .venv/Scripts/activate
+source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install -e .
 ```
 
-## Configuration
+### Local GPU extras
 
-Copy `.env.example` to `.env` and adjust these fields as needed:
+Install PyTorch with the CUDA wheel that matches your server first, then install the GPU extras:
 
-- `INFERENCE_BACKEND=mock|openai|anthropic|together|vllm`
-- `REASONING_MODEL`
-- `BULK_MODEL`
-- `EMBEDDING_MODEL`
-- `TARGET_PAIR_COUNT`
-- `BATCH_SIZE`
-- `JSONLD_RATIO`
-- `MAX_REFINEMENT_LOOPS`
+```bash
+python -m pip install --extra-index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio
+python -m pip install -r requirements-local-gpu.txt
+```
 
-`mock` is the safest default for offline/local verification. In mock mode the pipeline uses deterministic heuristic generation and hashing embeddings to avoid remote model downloads.
+## Local Server Configuration
+
+Copy `.env.example` to `.env` and point it at local model directories. Example:
+
+```bash
+INFERENCE_BACKEND=local-transformers
+REASONING_MODEL=Qwen/Qwen2.5-14B-Instruct
+BULK_MODEL=Qwen/Qwen2.5-7B-Instruct
+EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
+LOCAL_REASONING_MODEL_PATH=/models/Qwen2.5-14B-Instruct
+LOCAL_BULK_MODEL_PATH=/models/Qwen2.5-7B-Instruct
+LOCAL_EMBEDDING_MODEL_PATH=/models/bge-large-en-v1.5
+LOCAL_FILES_ONLY=true
+LOCAL_DEVICE=cuda:0
+LOCAL_DTYPE=bfloat16
+LOCAL_MAX_NEW_TOKENS=1024
+LOCAL_TOP_P=0.9
+LOCAL_USE_4BIT=false
+```
+
+`LOCAL_FILES_ONLY=true` ensures the runtime never tries to fetch model weights from the network. Pre-download the models to the mounted paths above.
 
 ## Commands
+
+Run directly from the repo checkout:
 
 ```bash
 python -m tmf921_dataset_gen.cli preflight
@@ -62,24 +85,28 @@ python -m tmf921_dataset_gen.cli dashboard
 - If `idan-reference/` is absent, `sample --count 1000` is intentionally blocked and writes `output/test_dataset/blocked_run_manifest.json` instead of producing a weakly grounded large sample.
 - If the `datasets` package is unavailable, exports still write `dataset.jsonl` and `manifest.json`; Hugging Face dataset export is skipped gracefully.
 
+## Docker
+
+General CPU/dev image:
+
+```bash
+docker build -t tmf921-dataset-gen .
+```
+
+GPU server image:
+
+```bash
+docker build -f Dockerfile.gpu -t tmf921-dataset-gen-gpu .
+docker run --gpus all --rm -it \
+  -v /models:/models \
+  --env-file .env \
+  tmf921-dataset-gen-gpu \
+  python -m tmf921_dataset_gen.cli generate --count 20
+```
+
 ## Testing
 
 ```bash
 python -m pytest tests/unit -q
 python -m pytest tests/integration -q
-```
-
-## Docker
-
-```bash
-docker build -t tmf921-dataset-gen .
-docker run --rm -it tmf921-dataset-gen python -m tmf921_dataset_gen.cli generate --count 20
-```
-
-## Dashboard
-
-The Streamlit dashboard reads `output/test_dataset/manifest.json` and `output/test_dataset/dataset.jsonl` by default.
-
-```bash
-python -m tmf921_dataset_gen.cli dashboard
 ```
