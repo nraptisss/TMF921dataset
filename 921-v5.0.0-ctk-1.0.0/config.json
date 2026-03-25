@@ -1,0 +1,127 @@
+{
+  "url": "http://tmf921-ri:8921/tmf-api/intentManagement/v5",
+  "headers": {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "payloads": {
+    "IntentReport": {
+      "POST": {
+        "payload": {
+          "@type": "IntentReport",
+          "creationDate": "2026-01-06T14:25:12Z",
+          "name": "sample_name",
+          "expression": {
+            "@type": "IntentExpression",
+            "expressionLanguage": "sample_expressionLanguage",
+            "expressionValue": "sample_expressionValue"
+          }
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "IntentReport",
+          "creationDate": "2026-01-06T14:25:12Z",
+          "name": "sample_name",
+          "expression": {
+            "@type": "IntentExpression",
+            "expressionLanguage": "sample_expressionLanguage",
+            "expressionValue": "sample_expressionValue"
+          }
+        }
+      }
+    },
+    "IntentSpecification": {
+      "POST": {
+        "payload": {
+          "@type": "IntentSpecification",
+          "name": "sample_name"
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "IntentSpecification",
+          "name": "sample_name"
+        }
+      }
+    },
+    "Intent": {
+      "POST": {
+        "payload": {
+          "@type": "Intent",
+          "name": "sample_name",
+          "expression": {
+            "@type": "IntentExpression",
+            "expressionLanguage": "sample_expressionLanguage",
+            "expressionValue": "sample_expressionValue",
+            "iri": "sample_iri"
+          }
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "Intent",
+          "name": "sample_name",
+          "expression": {
+            "@type": "IntentExpression",
+            "expressionLanguage": "sample_expressionLanguage",
+            "expressionValue": "sample_expressionValue",
+            "iri": "sample_iri"
+          }
+        }
+      }
+    },
+    "Hub": {
+      "POST": {
+        "payload": {
+          "@type": "Hub",
+          "callback": "sample_callback"
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "Hub",
+          "callback": "sample_callback"
+        }
+      }
+    },
+    "ProbeIntent": {
+      "POST": {
+        "payload": {
+          "@type": "ProbeIntent",
+          "name": "sample_name"
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "ProbeIntent",
+          "name": "sample_name"
+        }
+      }
+    },
+    "JudgeIntent": {
+      "POST": {
+        "payload": {
+          "@type": "JudgeIntent"
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "JudgeIntent"
+        }
+      }
+    },
+    "BestIntent": {
+      "POST": {
+        "payload": {
+          "@type": "BestIntent"
+        }
+      },
+      "PATCH": {
+        "payload": {
+          "@type": "BestIntent"
+        }
+      }
+    }
+  }
+}

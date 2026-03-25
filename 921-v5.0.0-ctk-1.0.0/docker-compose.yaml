@@ -1,0 +1,19 @@
+# do not chamnge the service names as they are used in the CI/CD pipelines and .config files
+name: tmf921-ctk-v5
+
+networks:
+    tmf:
+      external: true
+
+services:
+  ctk:
+    image: tmforumorg/921-v5.0.0-ctk:1.0.0
+    platform: linux/amd64
+    container_name: 921-ctk-v5
+    volumes:
+      # Test reports will be written here
+      - ./reports:/reports:rw
+      # Always mount local config.json as the config used by CTK
+      - ./config.json:/config/config.json:ro
+    networks:
+      - tmf
