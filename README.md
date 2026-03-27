@@ -15,8 +15,8 @@ This project can now run fully locally without OpenAI, Anthropic, Together, or a
 
 Recommended local model split:
 
-- Reasoning model: `Qwen/Qwen2.5-14B-Instruct`
-- Bulk generation model: `Qwen/Qwen2.5-7B-Instruct`
+- Reasoning model: `Qwen/Qwen3.5-9B-Instruct`
+- Bulk generation model: `Qwen/Qwen3.5-4B-Instruct`
 - Embeddings: `BAAI/bge-large-en-v1.5`
 - Precision: `bfloat16`
 - Quantization: optional 4-bit if you want to reduce VRAM pressure further on Linux
@@ -49,12 +49,12 @@ Copy `.env.example` to `.env` and point it at local model directories. Example:
 
 ```bash
 INFERENCE_BACKEND=local-transformers
-REASONING_MODEL=Qwen/Qwen2.5-14B-Instruct
-BULK_MODEL=Qwen/Qwen2.5-7B-Instruct
+REASONING_MODEL=Qwen/Qwen3.5-9B
+BULK_MODEL=Qwen/Qwen3.5-4B
 EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
-LOCAL_REASONING_MODEL_PATH=/models/Qwen2.5-14B-Instruct
-LOCAL_BULK_MODEL_PATH=/models/Qwen2.5-7B-Instruct
-LOCAL_EMBEDDING_MODEL_PATH=/models/bge-large-en-v1.5
+LOCAL_REASONING_MODEL_PATH=/home/user/work/codex-dataset/models/Qwen3.5-9B
+LOCAL_BULK_MODEL_PATH=/home/user/work/codex-dataset/models/Qwen3.5-4B
+LOCAL_EMBEDDING_MODEL_PATH=/home/user/work/codex-dataset/models/bge-large-en-v1.5
 LOCAL_FILES_ONLY=true
 LOCAL_DEVICE=cuda:0
 LOCAL_DTYPE=bfloat16
@@ -70,10 +70,11 @@ LOCAL_USE_4BIT=false
 Run directly from the repo checkout:
 
 ```bash
+source .venv/bin/activate
 python -m tmf921_dataset_gen.cli preflight
 python -m tmf921_dataset_gen.cli build-corpus
-python -m tmf921_dataset_gen.cli generate --count 100
-python -m tmf921_dataset_gen.cli sample --count 1000 --out output/test_dataset
+python -m tmf921_dataset_gen.cli generate --count 1000
+python -m tmf921_dataset_gen.cli sample --count 1000 --out output/production_dataset
 python -m tmf921_dataset_gen.cli dashboard
 ```
 
