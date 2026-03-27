@@ -10,3 +10,21 @@ artifacts/indexes/
 artifacts/reports/
 output/
 
+
+# Local model files (too large for git)
+models/
+*.pt
+*.pth
+*.ckpt
+.bin
+
+# Environment files (contains secrets)
+.env
+.env.local
+
+# Pip install output
+=0.11
+
+# Helper scripts (optional)
+download_models.py
+
