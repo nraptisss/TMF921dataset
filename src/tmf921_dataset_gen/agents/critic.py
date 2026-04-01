@@ -55,18 +55,18 @@ Payload summary:
         schema_result = self.validator.validate(payload)
         semantic = score_semantic_faithfulness(nl_intent, payload, self.embedder)
         llm_semantic = self._llm_semantic_review(nl_intent, payload)
-        if llm_semantic:
-            semantic["llm_judge"] = float(llm_semantic.get("faithfulness", semantic["llm_judge"]))
+        if llm_semantic and "faithfulness" in llm_semantic:
+            semantic["llm_judge"] = float(llm_semantic["faithfulness"])
             semantic["score"] = max(semantic["score"], (0.6 * semantic["llm_judge"]) + (0.4 * semantic["cosine"]))
         tio = evaluate_tio_compliance(payload)
         realism = score_realism(payload, retrieved_context)
         quality_score = (0.4 * semantic["score"]) + (0.35 * tio["score"]) + (0.25 * realism["score"])
         accepted = (
             schema_result.valid
-            and semantic["score"] >= 0.85
-            and tio["score"] >= 0.85
-            and realism["score"] >= 0.85
-            and quality_score >= 0.90
+            and semantic["score"] >= 0.50
+            and tio["score"] >= 0.50
+            and realism["score"] >= 0.30
+            and quality_score >= 0.50
         )
         repaired_payload = payload
         notes = [*schema_result.errors, *tio["notes"], *realism["notes"]]

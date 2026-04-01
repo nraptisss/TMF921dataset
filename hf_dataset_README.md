@@ -1,15 +1,41 @@
+---
+license: cc-by-4.0
+task_categories:
+  - text-classification
+  - text-generation
+size_categories:
+  - 10K<n<100K
+language:
+  - en
+---
+
 # TMF921 Intents Dataset
 
-This dataset contains 1,000 synthetically generated natural-language intents paired with their formal TMF921 v5.0 `Intent_FVO` representations. The intents were generated using the [TMF921 Dataset Generator](https://github.com/nraptisss/codex-dataset) running locally on an NVIDIA RTX 6000 Ada GPU with Qwen 3.5 language models.
+This dataset contains 10,000 synthetically generated natural-language intents paired with their formal TMF921 v5.0 `Intent_FVO` representations. The intents were generated using the enhanced TMF921 Dataset Generator with improved realism features, running locally on an NVIDIA RTX 6000 Ada GPU with Qwen 3.5 language models.
+
+## 🔬 **Enhancements Over Original**
+
+This version includes significant improvements for training robust NLU models:
+
+### 🎭 **Natural Language Template Variations**
+- **Conversational**: "Hey, can we minimize a EMBB slice for the private campus? I need throughput of at least 428 Mbps..."
+- **Administrative**: "Action required: minimize resource for private campus. Specs: support for 12433 devices..."
+- **Business-focused**: "We need to optimize the business interface: throughput of at least 719 Mbps..."
+- **Technical precise**: "Implement coordinate MMTC functionality. Constraints: support for 6645 devices..."
+
+### 🔊 **Realistic Noise & Ambiguity**
+- **KPI Omission**: ~10% random omission of KPIs to simulate incomplete operator requests
+- **Value Variation**: ±5% noise on numeric values to reflect real-world imprecision
+- **Missing Parameters**: Some intents intentionally lack certain specifications
 
 ## Dataset Structure
 
-Each example in the dataset contains the following fields:
+Each example contains:
 
-- `nl_intent`: Natural language English description of the intent
-- `tmf921_intent`: Fully structured TMF921 Intent_FVO object (either JSON-LD or Turtle expression)
-- `serialization`: Either `"json-ld"` or `"turtle"` indicating the format of `tmf921_intent`
-- `metadata`: Rich annotation object containing:
+- **`nl_intent`**: Natural language English description of the intent (enhanced with variations)
+- **`tmf921_intent`**: Fully structured TMF921 Intent_FVO object (JSON-LD or Turtle expression)
+- **`serialization`**: Either `"json-ld"` or `"turtle"` indicating the format of `tmf921_intent`
+- **`metadata`**: Rich annotation object containing:
   - `taxonomy_category`: Hierarchical classification (e.g., `service/embb/energy`)
   - `kpis`: Extracted key performance indicators with values and units
   - `quality_score`: Composite quality metric (0-1)
@@ -23,13 +49,14 @@ Each example in the dataset contains the following fields:
 
 ## Generation Methodology
 
-The intents were generated using a retrieval-augmented pipeline:
+The intents were generated using an enhanced retrieval-augmented pipeline:
 
 1. **Corpus Construction**: Processed TR290 documents, TMF921 specification seeds, and IDAN reference implementations into a normalized corpus.
 2. **Retrieval-Augmented Generation**: 
-   - Reasoning model (Qwen3.5-9B) generates structured intermediate representations from retrieved context and seed prompts
-   - Translation model (Qwen3.5-4B) converts these into natural language descriptions and formal TMF921 expressions
-3. **Grounded Sampling**: Outputs are constrained using retrieved passages to ensure factual grounding in source materials.
+   - Reasoning model (Qwen/Qwen3.5-9B) generates structured intermediate representations from retrieved context and seed prompts
+   - Translation model (Qwen/Qwen3.5-4B) converts these into natural language descriptions and formal TMF921 expressions
+3. **Enhanced Diversity Agent**: Applies template variations and noise injection for improved realism
+4. **Grounded Sampling**: Outputs are constrained using retrieved passages to ensure factual grounding in source materials.
 
 ## Technical Details
 

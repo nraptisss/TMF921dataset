@@ -92,12 +92,13 @@ def score_semantic_faithfulness(
     nl_vec = embedder.embed_query(nl_intent)
     payload_vec = embedder.embed_query(payload_text)
     cosine = float(cosine_similarity([nl_vec], [payload_vec])[0][0])
-    adjusted_cosine = max(cosine, lexical_overlap)
-    llm_judge = min(1.0, 0.75 + (0.25 * max(overlap_score, lexical_overlap)))
-    score = max(0.0, min(1.0, (0.6 * llm_judge) + (0.4 * adjusted_cosine)))
+    # Use actual cosine similarity without artificial boosting
+    # Score combines overlap and cosine without artificial floors
+    score = max(0.0, min(1.0, (0.5 * overlap_score) + (0.5 * cosine)))
     return {
-        "llm_judge": llm_judge,
-        "cosine": adjusted_cosine,
+        "cosine": cosine,
+        "overlap": overlap_score,
+        "lexical_overlap": lexical_overlap,
         "score": score,
         "nl_kpis": nl_kpis,
         "payload_kpis": payload_kpis,

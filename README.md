@@ -36,10 +36,12 @@ python -m pip install -r requirements.txt
 
 ### Local GPU extras
 
-Install PyTorch with the CUDA wheel that matches your server first, then install the GPU extras:
+Install PyTorch with the CUDA wheel that matches your server driver first, then install the GPU extras:
 
 ```bash
-python -m pip install --extra-index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio
+# Check your driver's max CUDA version: nvidia-smi | grep "CUDA Version"
+# Driver 535.x supports up to CUDA 12.6
+python -m pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.5.1+cu121
 python -m pip install -r requirements-local-gpu.txt
 ```
 
@@ -50,11 +52,11 @@ Copy `.env.example` to `.env` and point it at local model directories. Example:
 ```bash
 INFERENCE_BACKEND=local-transformers
 REASONING_MODEL=Qwen/Qwen3.5-9B
-BULK_MODEL=Qwen/Qwen3.5-4B
+BULK_MODEL=Qwen/Qwen3.5-9B
 EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
 LOCAL_REASONING_MODEL_PATH=/home/user/work/codex-dataset/models/Qwen3.5-9B
-LOCAL_BULK_MODEL_PATH=/home/user/work/codex-dataset/models/Qwen3.5-4B
-LOCAL_EMBEDDING_MODEL_PATH=/home/user/work/codex-dataset/models/bge-large-en-v1.5
+LOCAL_BULK_MODEL_PATH=/home/user/work/codex-dataset/models/Qwen3.5-9B
+LOCAL_EMBEDDING_MODEL_PATH=
 LOCAL_FILES_ONLY=true
 LOCAL_DEVICE=cuda:0
 LOCAL_DTYPE=bfloat16
@@ -62,6 +64,8 @@ LOCAL_MAX_NEW_TOKENS=1024
 LOCAL_TOP_P=0.9
 LOCAL_USE_4BIT=false
 ```
+
+> **Note**: The Qwen3.5-4B model weights are not bundled in this repo. Use the 9B model for both roles — it fits comfortably on an RTX 6000 Ada (51 GB VRAM). Clear `LOCAL_EMBEDDING_MODEL_PATH` to fall back to `HashingVectorizer` embeddings when `BAAI/bge-large-en-v1.5` is not available locally.
 
 `LOCAL_FILES_ONLY=true` ensures the runtime never tries to fetch model weights from the network. Pre-download the models to the mounted paths above.
 
@@ -77,6 +81,21 @@ python -m tmf921_dataset_gen.cli generate --count 1000
 python -m tmf921_dataset_gen.cli sample --count 1000 --out output/production_dataset
 python -m tmf921_dataset_gen.cli dashboard
 ```
+
+### Batch generation (10k samples)
+
+For large-scale generation, use the daemon script which runs 10 batches of 1000 samples:
+
+```bash
+source .venv/bin/activate
+# Mock backend (fast, ~12 min for 10k):
+INFERENCE_BACKEND=mock python run_daemon.py
+
+# Or use the non-daemon script for foreground runs:
+INFERENCE_BACKEND=mock python generate_10k.py
+```
+
+Output goes to `output/10k_generated/` with individual batches in `batch_1/` through `batch_10/`.
 
 ## Reproducibility Notes
 
@@ -111,3 +130,7 @@ docker run --gpus all --rm -it \
 python -m pytest tests/unit -q
 python -m pytest tests/integration -q
 ```
+
+## Troubleshooting
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed log of problems encountered and fixes applied during setup and generation.

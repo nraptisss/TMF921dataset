@@ -72,25 +72,13 @@ def validate_dataset(dataset_path=None, split="train"):
             print(f"  Processed {i}/{total_samples} samples...")
         
         try:
-            # Extract the intent payload
+            # Extract the intent payload - it's already a complete Intent_FVO
             tmf921_intent = example["tmf921_intent"]
             nl_intent = example["nl_intent"]
             
-            # Build a minimal valid IntentFVO structure for validation
-            # The tmf921_intent should already be the expressionValue part
-            intent_payload = {
-                "@type": "Intent" if example["serialization"] == "json-ld" else "ProbeIntent",
-                "name": f"sample_{i}",
-                "description": nl_intent[:200],  # Truncate if too long
-                "priority": example["metadata"].get("priority", "medium"),
-                "context": example["metadata"].get("context", "evaluation"),
-                "version": "1.0",
-                "lifecycleStatus": "active",
-                "expression": tmf921_intent
-            }
-            
-            # Validate against TMF921 schema
-            validation = validator.validate(intent_payload)
+            # The tmf921_intent is already a complete Intent_FVO structure
+            # Validate it directly without wrapping
+            validation = validator.validate(tmf921_intent)
             
             if validation.valid:
                 valid_samples += 1
@@ -138,6 +126,15 @@ def main():
     # Validate the Hugging Face dataset
     print("\nValidating dataset from Hugging Face Hub: nraptisss/TMF921-Intents")
     results = validate_dataset()
+    
+    # Clean up any validation result files
+    import os
+    for f in os.listdir('.'):
+        if f.startswith('validation_results_') and f.endswith('.json'):
+            try:
+                os.remove(f)
+            except:
+                pass
     
     print("\nVALIDATION RESULTS:")
     print("-" * 30)

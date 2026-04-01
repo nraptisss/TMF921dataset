@@ -103,7 +103,10 @@ class LocalTransformersEngine:
         tokenizer, model_obj = self._load_components(model_ref)
         messages = [{"role": "user", "content": prompt}]
         if hasattr(tokenizer, "apply_chat_template"):
-            rendered_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            try:
+                rendered_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
+            except TypeError:
+                rendered_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         else:
             rendered_prompt = prompt
         inputs = tokenizer(rendered_prompt, return_tensors="pt")
