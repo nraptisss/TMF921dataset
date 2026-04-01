@@ -16,6 +16,9 @@ def _paragraphs_to_markdown(document: Document) -> str:
         text = re.sub(r"\s+", " ", paragraph.text).strip()
         if not text:
             continue
+        # Skip common boilerplate patterns
+        if re.search(r"(copyright|tm forum|page \d+|draft|version)", text.lower()):
+            continue
         style_name = getattr(paragraph.style, "name", "") or ""
         match = re.search(r"Heading\s*(\d+)", style_name, re.IGNORECASE)
         if match:
@@ -32,6 +35,9 @@ def _extract_pdf_markdown(path: Path) -> str:
         for page_number, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
             text = re.sub(r"\s+", " ", text).strip()
+            # Remove page headers/footers (common patterns)
+            text = re.sub(r"^(page \d+|tm forum|intent common model).*?$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+            text = text.strip()
             if text:
                 pages.append(f"## Page {page_number}\n\n{text}")
     return "\n\n".join(pages)
@@ -57,7 +63,7 @@ def extract_tr290_documents(settings: Settings) -> list[dict[str, Any]]:
             )
         return corpus
 
-    docx_document = Document(settings.repo.tr290_docx)
+    docx_document = Document(str(settings.repo.tr290_docx))
     docx_markdown = _paragraphs_to_markdown(docx_document)
     docx_output = normalized_dir / "TR290_Intent_Common_Model_v3.0.0.docx.md"
     docx_output.write_text(docx_markdown, encoding="utf-8")

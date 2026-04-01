@@ -11,6 +11,38 @@ from .seed_loader import load_seed_records
 from .tr290_extractor import extract_tr290_documents
 
 
+def _fuzzy_deduplicate(corpus: list[dict[str, Any]], similarity_threshold: float = 0.8) -> list[dict[str, Any]]:
+    """Remove duplicate documents based on text similarity."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    import numpy as np
+
+    if len(corpus) <= 1:
+        return corpus
+
+    texts = [doc["text"] for doc in corpus]
+    vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+    try:
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        similarity_matrix = cosine_similarity(tfidf_matrix)
+        to_remove = set()
+        for i in range(len(corpus)):
+            if i in to_remove:
+                continue
+            for j in range(i + 1, len(corpus)):
+                if similarity_matrix[i, j] > similarity_threshold:
+                    # Prefer shorter or earlier source
+                    if len(texts[i]) > len(texts[j]):
+                        to_remove.add(i)
+                        break
+                    else:
+                        to_remove.add(j)
+        return [doc for idx, doc in enumerate(corpus) if idx not in to_remove]
+    except ValueError:
+        # If vectorization fails, return original
+        return corpus
+
+
 def chunk_text(text: str, chunk_size: int = 1200, overlap: int = 120) -> list[str]:
     if len(text) <= chunk_size:
         return [text]
@@ -32,6 +64,9 @@ def build_corpus(settings: Settings) -> list[dict[str, Any]]:
     corpus.extend(load_seed_records(settings))
     corpus.extend(extract_tr290_documents(settings))
     corpus.extend(load_idan_documents(settings))
+
+    # Deduplicate corpus
+    corpus = _fuzzy_deduplicate(corpus)
 
     corpus_dir = settings.repo.normalized_dir / "corpus"
     corpus_dir.mkdir(parents=True, exist_ok=True)

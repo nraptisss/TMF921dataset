@@ -9,6 +9,15 @@ from ..config import Settings
 
 SUPPORTED_SUFFIXES = {".ttl", ".jsonld", ".json", ".md", ".rdf", ".owl"}
 
+# Keywords indicating intent-related content
+INTENT_KEYWORDS = {"intent", "fvo", "expression", "deliveryexpectation", "constraint", "kpi", "slice", "network", "service"}
+
+
+def _is_intent_related(text: str) -> bool:
+    """Check if text contains intent-related keywords (case-insensitive)."""
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in INTENT_KEYWORDS)
+
 
 def load_idan_documents(settings: Settings) -> list[dict[str, Any]]:
     normalized_dir = settings.repo.normalized_dir / "idan"
@@ -31,6 +40,9 @@ def load_idan_documents(settings: Settings) -> list[dict[str, Any]]:
         if not path.is_file() or path.suffix.lower() not in SUPPORTED_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
+        # Filter for intent-related content
+        if not _is_intent_related(text):
+            continue
         relative_path = path.relative_to(settings.repo.idan_reference_dir)
         corpus.append(
             {

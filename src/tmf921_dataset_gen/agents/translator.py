@@ -43,11 +43,17 @@ class TranslatorAgent:
             return "medium"
         return "high"
 
-    def _llm_translation_options(self, nl_intent: str, taxonomy_target: dict[str, Any], kpis: dict[str, Any], sample_index: int) -> dict[str, Any]:
+    def _llm_translation_options(self, nl_intent: str, taxonomy_target: dict[str, Any], kpis: dict[str, Any], context: list[dict[str, Any]], sample_index: int) -> dict[str, Any]:
         if not self.router.supports_generation():
             return {}
         default_serialization = self.choose_serialization(sample_index)
+        context_text = "\n".join([f"- {chunk.get('text', '')[:200]}" for chunk in context[:3]])  # Top 3 chunks, truncated
         prompt = f"""
+Context from knowledge base:
+{context_text}
+
+Translate the following intent to TMF921 format:
+
 You are planning a TMF921 translation step for a local telecom intent dataset generator.
 Return JSON only with these optional keys:
 {{"name": "...", "context": "...", "priority": "critical|high|medium|low", "serialization": "json-ld|turtle"}}
@@ -173,7 +179,7 @@ Natural-language intent:
         sample_index: int,
     ) -> dict[str, Any]:
         kpis = extract_kpis(nl_intent)
-        translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, sample_index)
+        translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, retrieved_context, sample_index)
         slug_source = translation_hints.get("name") or f"{taxonomy_target['taxonomy_category']}-{sample_index}"
         slug = self._slugify(slug_source)
         serialization = translation_hints.get("serialization") or self.choose_serialization(sample_index)

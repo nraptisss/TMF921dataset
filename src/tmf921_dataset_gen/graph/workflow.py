@@ -16,6 +16,7 @@ from ..models.dataset import DatasetMetadata, DatasetRecord
 from ..models.state import GraphState
 from ..rag.retriever import BalancedRetriever
 from ..taxonomy.quota_planner import QuotaPlanner
+from ..validation.diversity_metrics import calculate_diversity_score, detect_bias
 
 
 class WorkflowRunner:
@@ -127,7 +128,8 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
     accepted_records: list[DatasetRecord] = []
     attempts = 0
     max_attempts = max(count * 3, count)
-    for taxonomy_target in planner.plan_targets(max_attempts):
+    taxonomy_targets = list(planner.plan_targets(max_attempts))
+    for taxonomy_target in taxonomy_targets:
         state = runner.invoke(taxonomy_target)
         attempts += 1
         if not state.get("accepted"):
@@ -144,6 +146,11 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
         if len(accepted_records) >= count:
             break
     payloads = [record.model_dump(mode="json") for record in accepted_records]
+
+    # Calculate diversity and bias
+    diversity_score = calculate_diversity_score(payloads)
+    bias_report = detect_bias(payloads, taxonomy_targets[:len(payloads)])
+
     if output_dir is not None:
         export_dataset_records(settings, accepted_records, output_dir)
     report_path = settings.repo.reports_dir / "generation_report.json"
@@ -153,6 +160,8 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
                 "requested_count": count,
                 "accepted_count": len(accepted_records),
                 "attempts": attempts,
+                "diversity_score": diversity_score,
+                "bias_report": bias_report,
             },
             indent=2,
         ),

@@ -42,6 +42,12 @@ def evaluate_tio_compliance(intent_payload: dict[str, Any]) -> dict[str, Any]:
             graph = rdflib.Graph()
             graph.parse(data=ttl, format="turtle")
             score += 0.4
+            # Check for Intent nodes
+            intent_nodes = list(graph.subjects(rdflib.RDF.type, rdflib.URIRef(f"{ICM_URI}Intent")))
+            if intent_nodes:
+                score += 0.1  # Bonus for valid Intent triples
+            else:
+                notes.append("no valid Intent nodes found in RDF graph")
         except Exception as exc:
             notes.append(f"turtle parse failure: {exc}")
             graph = None

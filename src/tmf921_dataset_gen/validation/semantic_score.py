@@ -8,37 +8,69 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ..rag.embeddings import EmbeddingBackend, HashingEmbeddingModel
 
 
+def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
+    """Enhanced KPI extraction using basic NLP patterns."""
+    import re
+    lowered = text.lower()
+
+    kpis = {}
+    # Use regex for numbers with units
+    unit_patterns = {
+        'latency_ms': r'(\d+(?:\.\d+)?)\s*(ms|milliseconds?)',
+        'throughput_gbps': r'(\d+(?:\.\d+)?)\s*(gbps|gigabits?|gb/s)',
+        'throughput_mbps': r'(\d+(?:\.\d+)?)\s*(mbps|megabits?|mb/s)',
+        'energy_kwh': r'(\d+(?:\.\d+)?)\s*(kwh|kilowatt.?hours?)',
+        'percentage': r'(\d+(?:\.\d+)?)\s*%',
+    }
+
+    for key, pattern in unit_patterns.items():
+        match = re.search(pattern, lowered)
+        if match:
+            kpis[key] = float(match.group(1))
+
+    # Reliability/availability from percentages
+    if 'reliability' in lowered and 'percentage' in kpis:
+        kpis['reliability_percent'] = kpis['percentage']
+    if 'availability' in lowered and 'percentage' in kpis:
+        kpis['availability_percent'] = kpis['percentage']
+
+    # Count patterns
+    count_patterns = {
+        'count_users': r'(\d+)\s*(users?|people)',
+        'count_sensors': r'(\d+)\s*(sensors?)',
+        'count_devices': r'(\d+)\s*(devices?|robots?)',
+    }
+
+    for key, pattern in count_patterns.items():
+        match = re.search(pattern, lowered)
+        if match:
+            kpis[key] = int(match.group(1))
+
+    # Reporting interval
+    if '5 minutes' in lowered:
+        kpis['reporting_interval_seconds'] = 300
+    elif '60 seconds' in lowered:
+        kpis['reporting_interval_seconds'] = 60
+
+    return kpis
+
+
 UNIT_PATTERN = re.compile(r"(\d+(?:\.\d+)?)\s*(ms|gbps|mbps|kwh|%)", re.IGNORECASE)
 COUNT_PATTERN = re.compile(r"(\d+)\s*(users|robots|industrial robots|sensors|vehicles|iot sensors)", re.IGNORECASE)
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def extract_kpis(text: str) -> dict[str, Any]:
-    lowered = text.lower()
-    metrics: dict[str, Any] = {}
-    for value, unit in UNIT_PATTERN.findall(lowered):
-        numeric = float(value)
-        key = unit.lower()
-        if key == "ms":
-            metrics.setdefault("latency_ms", numeric)
-        elif key == "gbps":
-            metrics.setdefault("throughput_gbps", numeric)
-        elif key == "mbps":
-            metrics.setdefault("throughput_mbps", numeric)
-        elif key == "kwh":
-            metrics.setdefault("energy_kwh", numeric)
-        elif key == "%":
-            metrics.setdefault("percentage_values", []).append(numeric)
-    if "reliability" in lowered and metrics.get("percentage_values"):
-        metrics["reliability_percent"] = metrics["percentage_values"][0]
-    if "availability" in lowered and metrics.get("percentage_values"):
-        metrics["availability_percent"] = metrics["percentage_values"][-1]
-    for count, noun in COUNT_PATTERN.findall(lowered):
-        metrics[f"count_{noun.replace(' ', '_')}"] = int(count)
-    if "5 minutes" in lowered:
-        metrics["reporting_interval_seconds"] = 300
-    if "60 seconds" in lowered:
-        metrics["reporting_interval_seconds"] = 60
+    metrics = _nlp_kpi_extraction(text)
+    # Plausibility checks
+    if 'latency_ms' in metrics and metrics['latency_ms'] <= 0:
+        del metrics['latency_ms']
+    if 'throughput_gbps' in metrics and metrics['throughput_gbps'] <= 0:
+        del metrics['throughput_gbps']
+    if 'reliability_percent' in metrics and not (0 <= metrics['reliability_percent'] <= 100):
+        del metrics['reliability_percent']
+    if 'availability_percent' in metrics and not (0 <= metrics['availability_percent'] <= 100):
+        del metrics['availability_percent']
     return metrics
 
 

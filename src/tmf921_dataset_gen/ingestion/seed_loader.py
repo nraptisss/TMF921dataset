@@ -10,6 +10,19 @@ from ..config import Settings
 TOP_LEVEL_KEYS = {"id", "nl_intent", "tmf921_intent", "notes"}
 
 
+def _validate_seed(seed: dict[str, Any]) -> bool:
+    """Validate that seed has required fields and valid TMF921 structure."""
+    if not all(key in seed for key in ["nl_intent", "tmf921_intent"]):
+        return False
+    intent = seed.get("tmf921_intent", {})
+    if not isinstance(intent, dict) or "@type" not in intent:
+        return False
+    # Check for basic TMF921 fields
+    if "expression" not in intent and "intentSpecification" not in intent:
+        return False
+    return True
+
+
 def _parse_seed_line(line: str) -> dict[str, Any]:
     try:
         return json.loads(line)
@@ -38,6 +51,8 @@ def load_seed_records(settings: Settings) -> list[dict[str, Any]]:
         if not line.strip():
             continue
         payload = _parse_seed_line(line)
+        if not _validate_seed(payload):
+            continue  # Skip invalid seeds
         serialization = "json-ld"
         expression_type = payload.get("tmf921_intent", {}).get("expression", {}).get("@type")
         if expression_type == "TurtleExpression":

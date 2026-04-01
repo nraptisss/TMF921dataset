@@ -145,6 +145,15 @@ python -m pytest tests/unit -q
 python -m pytest tests/integration -q
 ```
 
+## Quality Enhancements
+
+This pipeline produces top-quality TMF921 intent datasets through advanced quality controls:
+
+- **Data Purity**: Intelligent filtering removes non-intent content (e.g., package files, boilerplate). Fuzzy deduplication eliminates redundant documents.
+- **Validation Depth**: Enhanced schema compliance, semantic scoring with plausibility checks, and TIO ontology validation including RDF graph parsing.
+- **Diversity Metrics**: Tracks unique intents/payloads and detects bias in taxonomy distribution.
+- **Quality Tracking**: Manifests include average scores, diversity, and bias reports for reproducible high-quality datasets.
+
 ## Troubleshooting
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed log of problems encountered and fixes applied during setup and generation.
