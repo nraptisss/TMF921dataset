@@ -1,1 +1,1 @@
-﻿"""Validation package."""
+"""Validation package."""

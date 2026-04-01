@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.cli import build_parser, cmd_sample
 

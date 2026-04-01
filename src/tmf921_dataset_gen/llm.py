@@ -130,6 +130,7 @@ class LocalTransformersEngine:
 class LLMRouter:
     settings: Settings
     _local_engine: LocalTransformersEngine = field(init=False, repr=False)
+    _openai_client: Any = field(init=False, repr=False, default=None)
 
     def __post_init__(self) -> None:
         self._local_engine = LocalTransformersEngine(self.settings)
@@ -143,11 +144,12 @@ class LLMRouter:
         if self.settings.inference_backend == "local-transformers":
             return self._local_engine.generate_text(prompt=prompt, model=model, temperature=temperature)
         if self.settings.inference_backend in {"openai", "together", "vllm"}:
-            client = OpenAI(
-                api_key=self.settings.openai_api_key or self.settings.together_api_key or "unused",
-                base_url=self.settings.openai_base_url,
-            )
-            response = client.chat.completions.create(
+            if self._openai_client is None:
+                self._openai_client = OpenAI(
+                    api_key=self.settings.openai_api_key or self.settings.together_api_key or "unused",
+                    base_url=self.settings.openai_base_url,
+                )
+            response = self._openai_client.chat.completions.create(
                 model=model,
                 temperature=temperature,
                 messages=[{"role": "user", "content": prompt}],

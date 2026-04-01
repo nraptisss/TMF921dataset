@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Literal
@@ -9,10 +9,10 @@ from pydantic import BaseModel, Field
 class DatasetMetadata(BaseModel):
     taxonomy_category: str
     kpis: dict[str, Any] = Field(default_factory=dict)
-    quality_score: float
-    tio_compliance: float
+    quality_score: float = 0.0
+    tio_compliance: float = 0.0
     seed_id: str | None = None
-    generation_timestamp: datetime
+    generation_timestamp: datetime | None = None
     schema_validity: float = 1.0
     realism_score: float = 0.0
     semantic_score: float = 0.0

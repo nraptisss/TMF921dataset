@@ -16,8 +16,8 @@ This project can now run fully locally without OpenAI, Anthropic, Together, or a
 Recommended local model split:
 
 - Reasoning model: `Qwen/Qwen3.5-9B-Instruct`
-- Bulk generation model: `Qwen/Qwen3.5-4B-Instruct`
-- Embeddings: `BAAI/bge-large-en-v1.5`
+- Bulk generation model: `Qwen/Qwen3.5-9B` (use 9B for both roles; 4B weights not available)
+- Embeddings: `BAAI/bge-large-en-v1.5` (falls back to HashingVectorizer if not available locally)
 - Precision: `bfloat16`
 - Quantization: optional 4-bit if you want to reduce VRAM pressure further on Linux
 
@@ -44,6 +44,8 @@ Install PyTorch with the CUDA wheel that matches your server driver first, then 
 python -m pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.5.1+cu121
 python -m pip install -r requirements-local-gpu.txt
 ```
+
+> **Important**: Do NOT install a PyTorch version compiled for a newer CUDA than your driver supports. The server's NVIDIA driver 535.288.01 supports up to CUDA 12.6, so `torch 2.11.0+cu130` will fail. Use `torch 2.5.1+cu121` instead.
 
 ## Local Server Configuration
 
@@ -96,6 +98,18 @@ INFERENCE_BACKEND=mock python generate_10k.py
 ```
 
 Output goes to `output/10k_generated/` with individual batches in `batch_1/` through `batch_10/`.
+
+### GPU batch generation
+
+For GPU-based generation with Qwen3.5-9B:
+
+```bash
+source .venv/bin/activate
+# Ensure .env has INFERENCE_BACKEND=local-transformers
+python generate_batch.py 20 output/gpu_test
+```
+
+> **Note**: GPU generation is slow (~0.04 samples/sec, ~8 min per 20 samples). Use mock backend for large-scale generation.
 
 ## Reproducibility Notes
 

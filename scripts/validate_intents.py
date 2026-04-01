@@ -62,11 +62,7 @@ def validate_dataset(dataset_path=None, split="train"):
     validation_errors = []
     
     print(f"Validating {total_samples} intents...")
-    
-    # Initialize settings properly
-    settings = Settings.from_env(Path.cwd())
-    validator = TMFJsonSchemaValidator(settings, "Intent_FVO")
-    
+
     for i, example in enumerate(dataset):
         if i % 100 == 0 and i > 0:
             print(f"  Processed {i}/{total_samples} samples...")
@@ -127,14 +123,13 @@ def main():
     print("\nValidating dataset from Hugging Face Hub: nraptisss/TMF921-Intents")
     results = validate_dataset()
     
-    # Clean up any validation result files
-    import os
-    for f in os.listdir('.'):
-        if f.startswith('validation_results_') and f.endswith('.json'):
-            try:
-                os.remove(f)
-            except:
-                pass
+    # Clean up old validation result files in the scripts directory
+    scripts_dir = Path(__file__).parent
+    for old_file in scripts_dir.glob('validation_results_*.json'):
+        try:
+            old_file.unlink()
+        except OSError:
+            pass
     
     print("\nVALIDATION RESULTS:")
     print("-" * 30)

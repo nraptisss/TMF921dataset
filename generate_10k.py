@@ -7,8 +7,9 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 
-os.chdir('/home/user/work/codex-dataset')
-sys.path.insert(0, 'src')
+REPO_ROOT = Path(__file__).resolve().parent
+os.chdir(str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / 'src'))
 
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.graph.workflow import run_generation

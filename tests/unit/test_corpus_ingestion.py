@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.ingestion.corpus_builder import build_corpus, chunk_text

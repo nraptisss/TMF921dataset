@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.ingestion.oas_parser import extract_oas_assets, get_example_values, load_oas_document

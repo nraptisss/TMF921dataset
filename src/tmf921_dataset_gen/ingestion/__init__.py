@@ -1,1 +1,1 @@
-﻿"""Ingestion utilities."""
+"""Ingestion utilities."""

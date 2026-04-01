@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.graph.workflow import run_generation

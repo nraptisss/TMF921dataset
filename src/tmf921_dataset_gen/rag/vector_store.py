@@ -1,6 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import chromadb
@@ -19,20 +20,26 @@ class ChromaVectorStore:
             path=str(self.settings.vector_index_dir),
             settings=ChromaSettings(anonymized_telemetry=False, allow_reset=True),
         )
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name,
-            metadata={"hnsw:space": "cosine"},
-        )
+        self._ensure_collection()
+
+    def _ensure_collection(self) -> None:
+        try:
+            self.collection = self.client.get_collection(
+                name=self.collection_name,
+            )
+        except Exception:
+            self.collection = self.client.create_collection(
+                name=self.collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
 
     def reset(self) -> None:
         try:
             self.client.delete_collection(self.collection_name)
         except Exception:
             pass
-        self.collection = self.client.get_or_create_collection(
-            name=self.collection_name,
-            metadata={"hnsw:space": "cosine"},
-        )
+        time.sleep(0.5)
+        self._ensure_collection()
 
     def index_documents(self, documents: list[dict[str, Any]], embedder: EmbeddingBackend) -> int:
         if not documents:
@@ -57,11 +64,19 @@ class ChromaVectorStore:
         return len(documents)
 
     def query(self, query_text: str, embedder: EmbeddingBackend, top_k: int = 8, where: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        result = self.collection.query(
-            query_embeddings=[embedder.embed_query(query_text)],
-            n_results=top_k,
-            where=where,
-        )
+        try:
+            result = self.collection.query(
+                query_embeddings=[embedder.embed_query(query_text)],
+                n_results=top_k,
+                where=where,
+            )
+        except Exception:
+            self._ensure_collection()
+            result = self.collection.query(
+                query_embeddings=[embedder.embed_query(query_text)],
+                n_results=top_k,
+                where=where,
+            )
         documents = result.get("documents", [[]])[0]
         metadatas = result.get("metadatas", [[]])[0]
         ids = result.get("ids", [[]])[0]

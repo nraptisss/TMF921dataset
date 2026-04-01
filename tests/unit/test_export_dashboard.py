@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.dashboard.streamlit_app import load_dataset_preview
 from tmf921_dataset_gen.models.dataset import DatasetMetadata, DatasetRecord

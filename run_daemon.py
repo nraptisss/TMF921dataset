@@ -2,11 +2,19 @@
 """Self-daemonizing 10k TMF921 dataset generator (mock backend)."""
 import os
 import sys
+import platform
 
-LOG = '/home/user/work/codex-dataset/output/10k_generated/generate.log'
-PIDFILE = '/home/user/work/codex-dataset/output/10k_generated/pid.txt'
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(REPO_ROOT, 'output', '10k_generated')
+LOG = os.path.join(OUTPUT_DIR, 'generate.log')
+PIDFILE = os.path.join(OUTPUT_DIR, 'pid.txt')
 
-os.makedirs(os.path.dirname(LOG), exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+if platform.system() == 'Windows':
+    print("Error: daemon mode is not supported on Windows.")
+    print("Use generate_10k.py directly instead.")
+    sys.exit(1)
 
 # Fork to background
 pid = os.fork()
@@ -26,7 +34,7 @@ log = open(LOG, 'w', buffering=1)
 os.dup2(log.fileno(), 1)
 os.dup2(log.fileno(), 2)
 
-os.chdir('/home/user/work/codex-dataset')
+os.chdir(REPO_ROOT)
 
 with open(PIDFILE, 'w') as f:
     f.write(str(os.getpid()))
@@ -34,7 +42,7 @@ with open(PIDFILE, 'w') as f:
 # Force mock backend BEFORE importing tmf921_dataset_gen
 os.environ['INFERENCE_BACKEND'] = 'mock'
 
-sys.path.insert(0, 'src')
+sys.path.insert(0, os.path.join(REPO_ROOT, 'src'))
 from pathlib import Path
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.graph.workflow import run_generation

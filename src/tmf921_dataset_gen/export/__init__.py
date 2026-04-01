@@ -1,1 +1,1 @@
-﻿"""Export package."""
+"""Export package."""

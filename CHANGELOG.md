@@ -1,5 +1,69 @@
 # Changelog & Troubleshooting Log
 
+## 2026-04-01: Codebase Fixes & GPU Pipeline Stabilization
+
+### Code Quality Fixes
+
+#### BOM Removal (42 files)
+- **Problem**: 42 Python files and 1 YAML file contained UTF-8 BOM (`U+FEFF`), causing `SyntaxError: invalid non-printable character U+FEFF` when parsed.
+- **Fix**: Stripped BOM from all affected files in `src/`, `tests/`, and `src/tmf921_dataset_gen/taxonomy/taxonomy.yaml`.
+
+#### `generate_batch.py` Import Error
+- **Problem**: Imported non-existent `run_sample` function from `workflow`.
+- **Fix**: Changed import to `run_generation` and updated function call.
+
+#### `pyproject.toml` Empty Dependencies
+- **Problem**: `dependencies = []` meant `pip install .` produced a broken package.
+- **Fix**: Populated dependencies from `requirements.txt` (16 packages including `python-dotenv`).
+
+#### `DatasetMetadata` Required Fields Without Defaults
+- **Problem**: `quality_score`, `tio_compliance`, `generation_timestamp` were required with no defaults, risking validation errors.
+- **Fix**: Added sensible defaults (`0.0`, `0.0`, `None`).
+
+#### `diversity.py` Silent Exception Swallowing
+- **Problem**: `_llm_rewrite` caught `Exception` with `pass`, making LLM failures invisible.
+- **Fix**: Added `logging.debug()` call to record failure reason.
+
+#### `validate_intents.py` Duplicate Initialization
+- **Problem**: `Settings` and `TMFJsonSchemaValidator` created twice in `validate_dataset()`.
+- **Fix**: Removed duplicate initialization.
+
+#### `validate_intents.py` Dangerous File Deletion
+- **Problem**: Iterated `os.listdir('.')` and deleted files matching pattern — could affect wrong directory.
+- **Fix**: Changed to use `Path(__file__).parent.glob()` to target only the scripts directory.
+
+#### Hardcoded Paths in Generation Scripts
+- **Problem**: `generate_10k.py` and `run_daemon.py` hardcoded `/home/user/work/codex-dataset`.
+- **Fix**: Replaced with `Path(__file__).resolve().parent` for portability.
+
+#### `run_daemon.py` No Windows Check
+- **Problem**: `os.fork()` used without platform check.
+- **Fix**: Added `platform.system() == 'Windows'` guard with error message.
+
+#### OpenAI Client Created Per Call
+- **Problem**: `LLMRouter.generate_text()` created new `OpenAI` client for every cloud API call.
+- **Fix**: Added `_openai_client` field with lazy initialization and caching.
+
+### GPU Pipeline Fixes
+
+#### PyTorch CUDA Version Mismatch
+- **Problem**: PyTorch 2.11.0+cu130 installed but driver only supports CUDA 12.6.
+- **Fix**: Reinstalled `torch==2.5.1+cu121` from PyTorch CUDA 12.1 index.
+
+#### ChromaDB Collection Corruption
+- **Problem**: Repeated `reset()` calls during batch generation corrupted ChromaDB collection references, causing `Collection does not exist` errors.
+- **Root Cause**: `get_or_create_collection()` returns stale references after delete/recreate cycles. Rapid successive `WorkflowRunner` instances corrupted shared state.
+- **Fix**: Replaced `get_or_create_collection()` with explicit `_ensure_collection()` using `get_collection()` with fallback to `create_collection()`. Added `time.sleep(0.5)` after delete and retry logic in `query()` method.
+
+### Generation Results
+
+| Backend | Speed | Samples Generated |
+|---------|-------|-------------------|
+| Mock (heuristic templates) | ~14 samples/sec | 9,990 (10k) |
+| Local GPU (Qwen3.5-9B) | ~0.041 samples/sec | 134 (4 batches of 20) |
+
+GPU-generated dataset at `output/10k_gpu_generated/dataset.jsonl` contains high-quality TMF921 JSON-LD payloads with valid schema compliance.
+
 ## 2026-04-01: Bug Fixes & 10k Dataset Generation
 
 ### Problems Encountered and Fixes Applied

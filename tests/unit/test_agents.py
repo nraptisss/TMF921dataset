@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from tmf921_dataset_gen.agents.critic import CriticRefinementAgent
 from tmf921_dataset_gen.agents.diversity import DiversityAgent

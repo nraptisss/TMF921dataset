@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import random
 from typing import Any
 
 from ..config import Settings
 from ..ingestion.seed_loader import load_seed_records
 from ..llm import LLMRouter
+
+LOGGER = logging.getLogger(__name__)
 
 
 SCENARIO_HINTS = {
@@ -239,8 +242,8 @@ Baseline intent:
             candidate = str(response.get("nl_intent", "")).strip()
             if candidate:
                 return candidate
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.debug("LLM rewrite failed, using baseline: %s", exc)
         return baseline_intent
 
     def generate(self, taxonomy_target: dict[str, Any], sample_index: int) -> dict[str, Any]:

@@ -8,7 +8,24 @@ version = "0.1.0"
 description = "Synthetic NL intent to TMF921 v5.0 dataset generator"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pydantic>=2.8",
+    "jsonschema>=4.23",
+    "PyYAML>=6.0",
+    "langgraph>=0.2",
+    "chromadb>=0.5",
+    "sentence-transformers>=3.0",
+    "scikit-learn>=1.5",
+    "rdflib>=7.0",
+    "python-docx>=1.1",
+    "pdfplumber>=0.11",
+    "openai>=1.40",
+    "transformers>=4.45",
+    "streamlit>=1.38",
+    "requests>=2.32",
+    "datasets>=2.21",
+    "python-dotenv>=1.0",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

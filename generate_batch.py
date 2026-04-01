@@ -12,33 +12,32 @@ from pathlib import Path
 sys.path.insert(0, 'src')
 
 from tmf921_dataset_gen.config import Settings
-from tmf921_dataset_gen.graph.workflow import run_sample
+from tmf921_dataset_gen.graph.workflow import run_generation
 
 def generate_batch(batch_size: int, output_dir: str):
     """Generate a batch of samples."""
     settings = Settings.from_env()
-    
+
     print(f"Starting generation of {batch_size} samples...")
     print(f"Output directory: {output_dir}")
-    
+
     start_time = time.time()
-    
+
     try:
-        result = run_sample(settings, count=batch_size, output_dir=output_dir)
+        records = run_generation(settings, count=batch_size, output_dir=Path(output_dir))
         elapsed = time.time() - start_time
-        
+
         print(f"Generation completed in {elapsed:.2f} seconds")
-        print(f"Generated {result.get('generated_records', 0)} records")
-        
-        # Check if files were created
+        print(f"Generated {len(records)} records")
+
         output_path = Path(output_dir)
         if (output_path / "dataset.jsonl").exists():
             with open(output_path / "dataset.jsonl", 'r') as f:
                 lines = [line for line in f if line.strip()]
             print(f"Dataset file contains {len(lines)} lines")
-        
-        return result
-        
+
+        return {"generated_records": len(records)}
+
     except Exception as e:
         print(f"Error during generation: {e}")
         import traceback
