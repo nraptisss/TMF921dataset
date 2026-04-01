@@ -4,12 +4,17 @@ import importlib.util
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional
 
 import requests
 from openai import OpenAI
 
 from .config import Settings
+
+# Lazy imports for transformers to avoid loading for mock backend
+_TRANSFORMERS_LOADED = False
+AutoModelForCausalLM = None
+AutoTokenizer = None
 
 
 JSON_FENCE_PATTERN = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
@@ -53,10 +58,15 @@ class LocalTransformersEngine:
         return mapping.get(self.settings.local_dtype.lower(), torch.bfloat16)
 
     def _load_components(self, model_ref: str):
+        global _TRANSFORMERS_LOADED, AutoModelForCausalLM, AutoTokenizer
+        if not _TRANSFORMERS_LOADED:
+            from transformers import AutoModelForCausalLM as _AutoModelForCausalLM, AutoTokenizer as _AutoTokenizer
+            AutoModelForCausalLM = _AutoModelForCausalLM
+            AutoTokenizer = _AutoTokenizer
+            _TRANSFORMERS_LOADED = True
+
         if model_ref in self._model_cache and model_ref in self._tokenizer_cache:
             return self._tokenizer_cache[model_ref], self._model_cache[model_ref]
-
-        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         tokenizer_kwargs: dict[str, Any] = {
             "trust_remote_code": self.settings.local_trust_remote_code,
@@ -129,11 +139,11 @@ class LocalTransformersEngine:
 @dataclass(slots=True)
 class LLMRouter:
     settings: Settings
-    _local_engine: LocalTransformersEngine = field(init=False, repr=False)
-    _openai_client: Any = field(init=False, repr=False, default=None)
+    _local_engine: Optional[LocalTransformersEngine] = field(init=False, repr=False, default=None)
+    _openai_client: Optional[Any] = field(init=False, repr=False, default=None)
 
     def __post_init__(self) -> None:
-        self._local_engine = LocalTransformersEngine(self.settings)
+        pass
 
     def supports_generation(self) -> bool:
         return self.settings.inference_backend != "mock"
@@ -142,6 +152,8 @@ class LLMRouter:
         if self.settings.inference_backend == "mock":
             return ""
         if self.settings.inference_backend == "local-transformers":
+            if self._local_engine is None:
+                self._local_engine = LocalTransformersEngine(self.settings)
             return self._local_engine.generate_text(prompt=prompt, model=model, temperature=temperature)
         if self.settings.inference_backend in {"openai", "together", "vllm"}:
             if self._openai_client is None:

@@ -22,8 +22,11 @@ from ..validation.diversity_metrics import calculate_diversity_score, detect_bia
 class WorkflowRunner:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.retriever = BalancedRetriever(settings)
-        self.retriever.build()
+        if settings.inference_backend != "mock":
+            self.retriever = BalancedRetriever(settings)
+            self.retriever.build()
+        else:
+            self.retriever = None
         self.diversity = DiversityAgent(settings)
         self.translator = TranslatorAgent(settings)
         self.critic = CriticRefinementAgent(settings, self.translator)
@@ -44,7 +47,10 @@ class WorkflowRunner:
             }
 
         def retrieve_node(state: GraphState) -> GraphState:
-            context = self.retriever.retrieve(state["nl_intent"], top_k=8, per_source=1)
+            if self.retriever is None:
+                context = []
+            else:
+                context = self.retriever.retrieve(state["nl_intent"], top_k=8, per_source=1)
             return {**state, "retrieved_context": context}
 
         def translate_node(state: GraphState) -> GraphState:
