@@ -135,6 +135,7 @@ Natural-language intent:
 
     def _build_turtle_expression(self, slug: str, kpis: dict[str, Any], taxonomy_target: dict[str, Any]) -> dict[str, Any]:
         params = self._expression_params(kpis, taxonomy_target)
+        expectation_type = "icm:ReportingExpectation" if taxonomy_target["scenario_family"] == "reporting" else "icm:DeliveryExpectation"
         param_lines = []
         param_ids = []
         param_counter = 1
@@ -161,7 +162,7 @@ Natural-language intent:
                 "  icm:intentOwner idan:DatasetGenerator ;",
                 f"  icm:hasExpectation idan:{slug}_expectation .",
                 "",
-                f"idan:{slug}_expectation a icm:DeliveryExpectation ;",
+                f"idan:{slug}_expectation a {expectation_type} ;",
                 f"  icm:target _:{slug}_target ;",
                 f"  icm:params {params_joined or '[]'} .",
                 "",

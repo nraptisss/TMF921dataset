@@ -4,7 +4,7 @@ from typing import Any
 
 from ..config import Settings
 from ..llm import LLMRouter
-from ..rag.embeddings import HashingEmbeddingModel
+from ..rag.embeddings import HashingEmbeddingModel, build_embedding_backend
 from ..validation.jsonschema_validator import TMFJsonSchemaValidator
 from ..validation.realism_score import score_realism
 from ..validation.semantic_score import intent_payload_to_text, score_semantic_faithfulness
@@ -17,8 +17,21 @@ class CriticRefinementAgent:
         self.settings = settings
         self.translator = translator or TranslatorAgent(settings)
         self.validator = TMFJsonSchemaValidator(settings, "Intent_FVO")
-        self.embedder = HashingEmbeddingModel()
+        self.embedder = self._build_semantic_embedder()
         self.router = LLMRouter(settings)
+
+    def _build_semantic_embedder(self):
+        if self.settings.effective_embedding_backend == "sentence-transformers":
+            model_name = self.settings.effective_embedding_model or self.settings.resolve_embedding_model()
+            return build_embedding_backend(
+                model_name,
+                allow_fallback=True,
+                prefer_hashing=False,
+                local_files_only=self.settings.is_local_model_backend and self.settings.local_files_only,
+            )
+        if self.settings.effective_embedding_backend == "hashing-vectorizer":
+            return HashingEmbeddingModel()
+        return HashingEmbeddingModel()
 
     def _llm_semantic_review(self, nl_intent: str, payload: dict[str, Any]) -> dict[str, Any]:
         if not self.settings.enable_llm_semantic_review or not self.router.supports_generation():

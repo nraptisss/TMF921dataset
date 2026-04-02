@@ -81,25 +81,7 @@ class DiversityAgent:
             base["reporting_interval_seconds"] = rng.choice([60, 120, 300])
         if scenario == "predictive_assurance":
             base["reaction_time_ms"] = rng.randint(50, 300)
-        
-        # Introduce noise: randomly omit some KPIs to create ambiguity (10% chance per KPI)
-        keys_to_check = list(base.keys())
-        for key in keys_to_check:
-            if rng.random() < 0.1:  # 10% chance to remove each KPI
-                del base[key]
-        
-        # Occasionally add slight noise to values to simulate real-world imprecision
-        for key, value in list(base.items()):
-            if rng.random() < 0.05:  # 5% chance to add noise to each value
-                if isinstance(value, float):
-                    # Add small Gaussian noise
-                    noise = rng.gauss(0, value * 0.01)  # 1% standard deviation
-                    base[key] = round(max(0, value + noise), len(str(value).split('.')[1]) if '.' in str(value) else 0)
-                elif isinstance(value, int) and key not in ["reporting_interval_seconds"]:
-                    # For integer values (except reporting intervals which should stay clean)
-                    noise = rng.randint(-max(1, value//20), max(1, value//20))  # Up to 5% variation
-                    base[key] = max(1, value + noise)
-        
+
         return base
 
     def _render_nl(self, taxonomy_target: dict[str, Any], kpis: dict[str, Any], rng: random.Random) -> str:

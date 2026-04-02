@@ -38,7 +38,8 @@ def test_idan_loader_reads_present_directory(tmp_path: Path) -> None:
     settings = Settings.from_env(Path.cwd())
     idan_dir = tmp_path / "idan-reference"
     idan_dir.mkdir()
-    (idan_dir / "example.ttl").write_text(
+    (idan_dir / "ontologies").mkdir()
+    (idan_dir / "ontologies" / "example.ttl").write_text(
         "@prefix icm: <http://example.com/icm#> .\n# intent expression sample",
         encoding="utf-8",
     )

@@ -45,7 +45,7 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 #### b. Retrieval-Augmented Generation (RAG) Setup
 - Embedding model encodes corpus passages into vector space
 - ChromaDB vector store enables semantic retrieval during generation
-- Top-k=5 relevant passages retrieved per generation step to ground outputs in domain knowledge
+- Top-k=8 retrieved passages (balanced per source type) are used per generation step to ground outputs in domain knowledge
 
 #### c. Intent Generation (`generate`)
 - **Diversity / Reasoning Step**:
@@ -70,7 +70,7 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 |--------|-----------|
 | **Qwen 3.5 Family** | Strong open models for local generation. The current supported local profile uses 9B weights for both reasoning and translation roles. |
 | **bfloat16 Precision** | Provides near-FP32 numerical stability with half the memory footprint, critical for fitting large models on consumer/prosumer GPUs. |
-| **Local-Only Inference (`LOCAL_FILES_ONLY=true`)** | Eliminates latency, cost, and privacy concerns associated with API-dependent approaches. Enables air-gapped deployment for sensitive telecom environments. |
+| **Configurable local/offline inference (`LOCAL_FILES_ONLY`)** | Supports both air-gapped operation (`true`, with pre-downloaded models) and online model fetch (`false`) when local caches are incomplete. |
 | **Retrieval-Augmented Generation** | Mitigates hallucination by anchoring generated intents in verified domain documents (TR290, specification seeds). Improves realism and compliance scores. |
 | **Hybrid Serialization (JSON-LD/Turtle)** | Reflects TMF921's support for multiple expression formats, increasing dataset utility for diverse downstream consumers. |
 | **Intent Taxonomy Coverage** | Generated intents span all major TMF921 layers (service/resource/business) and types (Intent/ProbeIntent) to maximize applicability. |

@@ -78,3 +78,44 @@ def test_critic_repairs_invalid_payload() -> None:
     )
     assert report["accepted"] is False
     assert "expression" in report["repaired_payload"]
+
+
+def test_translator_uses_reporting_expectation_for_turtle_reporting() -> None:
+    settings = Settings.from_env(Path.cwd())
+    settings.jsonld_ratio = 0.0
+    translator = TranslatorAgent(settings)
+    taxonomy_target = {
+        "taxonomy_category": "service/urllc/reporting",
+        "layer": "service",
+        "traffic_profile": "urllc",
+        "scenario_family": "reporting",
+        "domain_context": "private campus",
+    }
+    translated = translator.translate(
+        nl_intent="Monitor URLLC with reports every 60 seconds and latency below 2 ms.",
+        taxonomy_target=taxonomy_target,
+        retrieved_context=[],
+        seed_ids=["seed-001"],
+        sample_index=5,
+        source_kpis={"latency_ms": 2.0, "reporting_interval_seconds": 60},
+    )
+    assert translated["serialization"] == "turtle"
+    expression_value = translated["tmf921_intent"]["expression"]["expressionValue"]
+    assert "icm:ReportingExpectation" in expression_value
+
+
+def test_diversity_agent_keeps_core_kpis_for_predictive_assurance() -> None:
+    settings = Settings.from_env(Path.cwd())
+    agent = DiversityAgent(settings)
+    target = {
+        "taxonomy_category": "service/urllc/predictive_assurance",
+        "layer": "service",
+        "traffic_profile": "urllc",
+        "scenario_family": "predictive_assurance",
+        "domain_context": "industrial automation",
+    }
+    generated = agent.generate(target, 0)
+    kpis = generated["metadata"]["kpis"]
+    assert "latency_ms" in kpis
+    assert "reliability_percent" in kpis
+    assert "reaction_time_ms" in kpis
