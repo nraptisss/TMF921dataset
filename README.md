@@ -125,6 +125,7 @@ python generate_batch.py 20 output/gpu_test
 - If `tr290-docs/*.md` is absent, Markdown is generated from the bundled DOCX/PDF into `artifacts/normalized/tr290/`.
 - If `idan-reference/` is absent, `sample --count 1000` is intentionally blocked and writes `output/test_dataset/blocked_run_manifest.json` instead of producing a weakly grounded large sample.
 - If the `datasets` package is unavailable, exports still write `dataset.jsonl` and `manifest.json`; Hugging Face dataset export is skipped gracefully.
+- Exported manifests now record both the configured embedding model and the effective embedding backend/model used at runtime (for example, fallback to `HashingVectorizer` when sentence-transformer weights are unavailable).
 
 ## Docker
 

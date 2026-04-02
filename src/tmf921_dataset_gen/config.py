@@ -107,6 +107,8 @@ class Settings:
     enable_llm_translation_hints: bool
     enable_llm_semantic_review: bool
     local_planning_max_new_tokens: int
+    effective_embedding_model: str | None
+    effective_embedding_backend: str | None
 
     @property
     def is_local_model_backend(self) -> bool:
@@ -165,4 +167,6 @@ class Settings:
             enable_llm_translation_hints=_env_bool("ENABLE_LLM_TRANSLATION_HINTS", True),
             enable_llm_semantic_review=_env_bool("ENABLE_LLM_SEMANTIC_REVIEW", not fast_mode),
             local_planning_max_new_tokens=_env_int("LOCAL_PLANNING_MAX_NEW_TOKENS", 160),
+            effective_embedding_model=None,
+            effective_embedding_backend=None,
         )

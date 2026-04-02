@@ -6,7 +6,12 @@ from typing import Any
 
 from ..config import Settings
 from ..ingestion.corpus_builder import build_corpus
-from .embeddings import EmbeddingBackend, build_embedding_backend
+from .embeddings import (
+    EmbeddingBackend,
+    HashingEmbeddingModel,
+    SentenceTransformerEmbeddingModel,
+    build_embedding_backend,
+)
 from .vector_store import ChromaVectorStore
 
 
@@ -30,7 +35,20 @@ class BalancedRetriever:
             prefer_hashing=settings.inference_backend == "mock",
             local_files_only=settings.is_local_model_backend and settings.local_files_only,
         )
+        self._record_effective_embedding()
         self.store = ChromaVectorStore(settings)
+
+    def _record_effective_embedding(self) -> None:
+        if isinstance(self.embedder, HashingEmbeddingModel):
+            self.settings.effective_embedding_backend = "hashing-vectorizer"
+            self.settings.effective_embedding_model = "HashingVectorizer"
+            return
+        if isinstance(self.embedder, SentenceTransformerEmbeddingModel):
+            self.settings.effective_embedding_backend = "sentence-transformers"
+            self.settings.effective_embedding_model = self.embedder.model_name
+            return
+        self.settings.effective_embedding_backend = type(self.embedder).__name__
+        self.settings.effective_embedding_model = type(self.embedder).__name__
 
     def build(self, force_rebuild: bool = False) -> int:
         chunks_path = self.settings.repo.normalized_dir / "corpus" / "corpus_chunks.jsonl"

@@ -17,12 +17,19 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
     avg_semantic = sum(record.metadata.semantic_score for record in records) / len(records) if records else 0
     avg_tio = sum(record.metadata.tio_compliance for record in records) / len(records) if records else 0
 
+    effective_embedding_model = settings.effective_embedding_model or settings.embedding_model
+    effective_embedding_backend = settings.effective_embedding_backend
+    if effective_embedding_backend is None:
+        effective_embedding_backend = "not-used" if settings.inference_backend == "mock" else "unknown"
+
     return {
         "project": "tmf921-dataset-gen",
         "record_count": len(records),
         "hf_dataset_path": str(hf_dataset_path) if hf_dataset_path else None,
         "jsonl_path": str(jsonl_path),
-        "embedding_model": settings.embedding_model,
+        "embedding_model": effective_embedding_model,
+        "configured_embedding_model": settings.embedding_model,
+        "effective_embedding_backend": effective_embedding_backend,
         "reasoning_model": settings.reasoning_model,
         "bulk_model": settings.bulk_model,
         "inference_backend": settings.inference_backend,

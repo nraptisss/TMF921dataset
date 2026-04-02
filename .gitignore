@@ -9,6 +9,10 @@ dist/
 artifacts/indexes/
 artifacts/reports/
 output/
+*.log
+nohup.out
+.codex
+tmp_*/
 
 
 # Local model files (too large for git)
@@ -22,9 +26,5 @@ models/
 .env
 .env.local
 
-# Pip install output
-=0.11
-
 # Helper scripts (optional)
 download_models.py
-
