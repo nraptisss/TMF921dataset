@@ -13,5 +13,6 @@ def test_preflight_detects_required_assets() -> None:
 
 def test_preflight_warns_when_idan_reference_missing() -> None:
     settings = Settings.from_env(Path.cwd())
+    settings.repo.idan_reference_dir = settings.repo.root / "missing-idan-reference"
     report = run_preflight(settings)
     assert any("idan-reference" in warning for warning in report.warnings)

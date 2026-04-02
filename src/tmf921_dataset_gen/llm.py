@@ -106,7 +106,7 @@ class LocalTransformersEngine:
         self._model_cache[model_ref] = model
         return tokenizer, model
 
-    def generate_text(self, prompt: str, model: str, temperature: float = 0.4) -> str:
+    def generate_text(self, prompt: str, model: str, temperature: float = 0.4, max_new_tokens: int | None = None) -> str:
         import torch
 
         model_ref = self.settings.resolve_generation_model(model)
@@ -125,7 +125,7 @@ class LocalTransformersEngine:
         with torch.inference_mode():
             output_ids = model_obj.generate(
                 **inputs,
-                max_new_tokens=self.settings.local_max_new_tokens,
+                max_new_tokens=max_new_tokens or self.settings.local_max_new_tokens,
                 do_sample=temperature > 0,
                 temperature=max(temperature, 1e-5),
                 top_p=self.settings.local_top_p,
@@ -148,26 +148,37 @@ class LLMRouter:
     def supports_generation(self) -> bool:
         return self.settings.inference_backend != "mock"
 
-    def generate_text(self, prompt: str, model: str, temperature: float = 0.4) -> str:
+    def generate_text(self, prompt: str, model: str, temperature: float = 0.4, max_new_tokens: int | None = None) -> str:
         if self.settings.inference_backend == "mock":
             return ""
         if self.settings.inference_backend == "local-transformers":
             if self._local_engine is None:
                 self._local_engine = LocalTransformersEngine(self.settings)
-            return self._local_engine.generate_text(prompt=prompt, model=model, temperature=temperature)
+            return self._local_engine.generate_text(
+                prompt=prompt,
+                model=model,
+                temperature=temperature,
+                max_new_tokens=max_new_tokens,
+            )
         if self.settings.inference_backend in {"openai", "together", "vllm"}:
             if self._openai_client is None:
                 self._openai_client = OpenAI(
                     api_key=self.settings.openai_api_key or self.settings.together_api_key or "unused",
                     base_url=self.settings.openai_base_url,
                 )
+            completion_args: dict[str, Any] = {
+                "model": model,
+                "temperature": temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            if max_new_tokens:
+                completion_args["max_tokens"] = max_new_tokens
             response = self._openai_client.chat.completions.create(
-                model=model,
-                temperature=temperature,
-                messages=[{"role": "user", "content": prompt}],
+                **completion_args,
             )
             return response.choices[0].message.content or ""
         if self.settings.inference_backend == "anthropic":
+            anthropic_max_tokens = max_new_tokens or 2048
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
@@ -177,7 +188,7 @@ class LLMRouter:
                 },
                 json={
                     "model": model,
-                    "max_tokens": 2048,
+                    "max_tokens": anthropic_max_tokens,
                     "temperature": temperature,
                     "messages": [{"role": "user", "content": prompt}],
                 },
@@ -189,8 +200,8 @@ class LLMRouter:
             return "".join(part.get("text", "") for part in parts if part.get("type") == "text")
         raise ValueError(f"Unsupported inference backend: {self.settings.inference_backend}")
 
-    def generate_json(self, prompt: str, model: str, temperature: float = 0.2) -> dict[str, Any]:
+    def generate_json(self, prompt: str, model: str, temperature: float = 0.2, max_new_tokens: int | None = None) -> dict[str, Any]:
         if self.settings.inference_backend == "mock":
             return {}
-        raw = self.generate_text(prompt, model=model, temperature=temperature)
+        raw = self.generate_text(prompt, model=model, temperature=temperature, max_new_tokens=max_new_tokens)
         return _extract_json_object(raw)

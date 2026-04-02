@@ -63,6 +63,16 @@ class ChromaVectorStore:
             self.collection.add(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
         return len(documents)
 
+    def count(self) -> int:
+        try:
+            return int(self.collection.count())
+        except Exception:
+            self._ensure_collection()
+            try:
+                return int(self.collection.count())
+            except Exception:
+                return 0
+
     def query(self, query_text: str, embedder: EmbeddingBackend, top_k: int = 8, where: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         try:
             result = self.collection.query(

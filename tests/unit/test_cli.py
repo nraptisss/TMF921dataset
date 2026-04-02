@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.cli import build_parser, cmd_sample
 
 
@@ -12,6 +13,9 @@ def test_cli_parser_has_expected_commands() -> None:
 
 def test_sample_blocks_without_idan_reference(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(Path.cwd())
+    settings = Settings.from_env(Path.cwd())
+    settings.repo.idan_reference_dir = settings.repo.root / "missing-idan-reference"
+    monkeypatch.setattr("tmf921_dataset_gen.cli.Settings.from_env", lambda: settings)
     out_dir = tmp_path / "sample"
     parser = build_parser()
     args = parser.parse_args(["sample", "--count", "1000", "--out", str(out_dir)])

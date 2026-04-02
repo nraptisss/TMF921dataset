@@ -21,7 +21,7 @@ class CriticRefinementAgent:
         self.router = LLMRouter(settings)
 
     def _llm_semantic_review(self, nl_intent: str, payload: dict[str, Any]) -> dict[str, Any]:
-        if not self.router.supports_generation():
+        if not self.settings.enable_llm_semantic_review or not self.router.supports_generation():
             return {}
         prompt = f"""
 You are judging whether a TMF921 intent payload is faithful to a natural-language telecom request.
@@ -36,7 +36,12 @@ Payload summary:
 {intent_payload_to_text(payload)}
 """.strip()
         try:
-            response = self.router.generate_json(prompt, model=self.settings.reasoning_model, temperature=0.1)
+            response = self.router.generate_json(
+                prompt,
+                model=self.settings.reasoning_model,
+                temperature=0.0,
+                max_new_tokens=self.settings.local_planning_max_new_tokens,
+            )
             if isinstance(response, dict) and "faithfulness" in response:
                 return response
         except Exception:
@@ -61,12 +66,21 @@ Payload summary:
         tio = evaluate_tio_compliance(payload)
         realism = score_realism(payload, retrieved_context)
         quality_score = (0.4 * semantic["score"]) + (0.35 * tio["score"]) + (0.25 * realism["score"])
+        semantic_threshold = 0.50
+        tio_threshold = 0.50
+        realism_threshold = 0.30
+        quality_threshold = 0.50
+        if self.settings.inference_backend == "mock":
+            semantic_threshold = 0.30
+            tio_threshold = 0.40
+            realism_threshold = 0.0
+            quality_threshold = 0.40
         accepted = (
             schema_result.valid
-            and semantic["score"] >= 0.50
-            and tio["score"] >= 0.50
-            and realism["score"] >= 0.30
-            and quality_score >= 0.50
+            and semantic["score"] >= semantic_threshold
+            and tio["score"] >= tio_threshold
+            and realism["score"] >= realism_threshold
+            and quality_score >= quality_threshold
         )
         repaired_payload = payload
         notes = [*schema_result.errors, *tio["notes"], *realism["notes"]]

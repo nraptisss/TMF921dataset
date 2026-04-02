@@ -61,6 +61,7 @@ class WorkflowRunner:
                 state.get("retrieved_context", []),
                 state.get("seed_ids", []),
                 sample_index,
+                source_kpis=state.get("metadata", {}).get("kpis", {}),
             )
             metadata = {**state.get("metadata", {}), **translated["metadata"]}
             return {
@@ -135,7 +136,9 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
     attempts = 0
     max_attempts = max(count * 3, count)
     taxonomy_targets = list(planner.plan_targets(max_attempts))
-    for taxonomy_target in taxonomy_targets:
+    for i, taxonomy_target in enumerate(taxonomy_targets):
+        if i % 10 == 0:
+            print(f"Processing target {i+1}/{len(taxonomy_targets)}...", flush=True)
         state = runner.invoke(taxonomy_target)
         attempts += 1
         if not state.get("accepted"):
@@ -151,6 +154,7 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
         )
         if len(accepted_records) >= count:
             break
+    print(f"Completed: {len(accepted_records)} accepted records from {attempts} attempts", flush=True)
     payloads = [record.model_dump(mode="json") for record in accepted_records]
 
     # Calculate diversity and bias

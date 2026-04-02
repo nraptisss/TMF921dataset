@@ -102,6 +102,11 @@ class Settings:
     local_top_p: float
     local_use_4bit: bool
     local_trust_remote_code: bool
+    fast_mode: bool
+    enable_llm_rewrite: bool
+    enable_llm_translation_hints: bool
+    enable_llm_semantic_review: bool
+    local_planning_max_new_tokens: int
 
     @property
     def is_local_model_backend(self) -> bool:
@@ -126,13 +131,15 @@ class Settings:
         vector_index = Path(_env("VECTOR_INDEX_DIR", str(repo.indexes_dir / "chroma")))
         if not vector_index.is_absolute():
             vector_index = repo_root / vector_index
+        inference_backend = _env("INFERENCE_BACKEND", "mock")
+        fast_mode = _env_bool("FAST_MODE", inference_backend == "local-transformers")
         return cls(
             repo=repo,
             reasoning_model=_env("REASONING_MODEL", "claude-4-sonnet"),
             bulk_model=_env("BULK_MODEL", "llama-4-70b"),
             embedding_model=_env("EMBEDDING_MODEL", "BAAI/bge-large-en-v1.5"),
             vector_db=_env("VECTOR_DB", "chroma"),
-            inference_backend=_env("INFERENCE_BACKEND", "mock"),
+            inference_backend=inference_backend,
             target_pair_count=_env_int("TARGET_PAIR_COUNT", 10000),
             batch_size=_env_int("BATCH_SIZE", 25),
             jsonld_ratio=_env_float("JSONLD_RATIO", 0.7),
@@ -153,4 +160,9 @@ class Settings:
             local_top_p=_env_float("LOCAL_TOP_P", 0.9),
             local_use_4bit=_env_bool("LOCAL_USE_4BIT", False),
             local_trust_remote_code=_env_bool("LOCAL_TRUST_REMOTE_CODE", False),
+            fast_mode=fast_mode,
+            enable_llm_rewrite=_env_bool("ENABLE_LLM_REWRITE", not fast_mode),
+            enable_llm_translation_hints=_env_bool("ENABLE_LLM_TRANSLATION_HINTS", True),
+            enable_llm_semantic_review=_env_bool("ENABLE_LLM_SEMANTIC_REVIEW", not fast_mode),
+            local_planning_max_new_tokens=_env_int("LOCAL_PLANNING_MAX_NEW_TOKENS", 160),
         )

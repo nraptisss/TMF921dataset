@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 
@@ -13,9 +14,8 @@ def calculate_diversity_score(records: list[dict[str, Any]]) -> float:
 
     for record in records:
         nl_intents.add(record.get("nl_intent", ""))
-        # Simple hash of payload structure
-        payload_str = str(record.get("tmf921_intent", {}))
-        payload_hashes.add(hash(payload_str))
+        payload_str = json.dumps(record.get("tmf921_intent", {}), sort_keys=True)
+        payload_hashes.add(payload_str)
 
     # Diversity as ratio of unique to total
     nl_diversity = len(nl_intents) / len(records)
@@ -24,13 +24,34 @@ def calculate_diversity_score(records: list[dict[str, Any]]) -> float:
     return (nl_diversity + payload_diversity) / 2
 
 
+def _coerce_taxonomy_target(record: dict[str, Any], taxonomy_targets: list[dict[str, Any]], index: int) -> dict[str, Any]:
+    metadata = record.get("metadata", {})
+    target = metadata.get("taxonomy_target")
+    if isinstance(target, dict) and target:
+        return target
+    if index < len(taxonomy_targets) and isinstance(taxonomy_targets[index], dict):
+        return taxonomy_targets[index]
+    category = metadata.get("taxonomy_category", "")
+    parts = category.split("/")
+    if len(parts) >= 3:
+        return {
+            "layer": parts[0],
+            "traffic_profile": parts[1],
+            "scenario_family": parts[2],
+        }
+    return {}
+
+
 def detect_bias(records: list[dict[str, Any]], taxonomy_targets: list[dict[str, Any]]) -> dict[str, Any]:
     """Detect bias in layer/traffic profile distribution."""
     layer_counts = {}
     traffic_counts = {}
 
-    for record in records:
-        target = record.get("metadata", {}).get("taxonomy_target", {})
+    if not records:
+        return {"bias_score": 0.0, "notes": []}
+
+    for index, record in enumerate(records):
+        target = _coerce_taxonomy_target(record, taxonomy_targets, index)
         layer = target.get("layer", "unknown")
         traffic = target.get("traffic_profile", "unknown")
 

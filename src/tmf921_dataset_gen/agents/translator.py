@@ -44,7 +44,7 @@ class TranslatorAgent:
         return "high"
 
     def _llm_translation_options(self, nl_intent: str, taxonomy_target: dict[str, Any], kpis: dict[str, Any], context: list[dict[str, Any]], sample_index: int) -> dict[str, Any]:
-        if not self.router.supports_generation():
+        if not self.settings.enable_llm_translation_hints or not self.router.supports_generation():
             return {}
         default_serialization = self.choose_serialization(sample_index)
         context_text = "\n".join([f"- {chunk.get('text', '')[:200]}" for chunk in context[:3]])  # Top 3 chunks, truncated
@@ -71,7 +71,12 @@ Natural-language intent:
 {nl_intent}
 """.strip()
         try:
-            response = self.router.generate_json(prompt, model=self.settings.bulk_model, temperature=0.2)
+            response = self.router.generate_json(
+                prompt,
+                model=self.settings.bulk_model,
+                temperature=0.1,
+                max_new_tokens=self.settings.local_planning_max_new_tokens,
+            )
             return response if isinstance(response, dict) else {}
         except Exception:
             return {}
@@ -177,8 +182,9 @@ Natural-language intent:
         retrieved_context: list[dict[str, Any]],
         seed_ids: list[str],
         sample_index: int,
+        source_kpis: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        kpis = extract_kpis(nl_intent)
+        kpis = dict(source_kpis or extract_kpis(nl_intent))
         translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, retrieved_context, sample_index)
         slug_source = translation_hints.get("name") or f"{taxonomy_target['taxonomy_category']}-{sample_index}"
         slug = self._slugify(slug_source)
@@ -207,6 +213,7 @@ Natural-language intent:
             "serialization": serialization,
             "metadata": {
                 "taxonomy_category": taxonomy_target["taxonomy_category"],
+                "taxonomy_target": dict(taxonomy_target),
                 "kpis": kpis,
                 "seed_id": seed_ids[0] if seed_ids else None,
                 "generation_timestamp": datetime.now(timezone.utc),

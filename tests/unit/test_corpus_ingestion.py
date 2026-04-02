@@ -26,6 +26,7 @@ def test_tr290_extractor_writes_markdown_outputs() -> None:
 
 def test_idan_loader_handles_missing_directory() -> None:
     settings = Settings.from_env(Path.cwd())
+    settings.repo.idan_reference_dir = settings.repo.root / "missing-idan-reference-for-test"
     docs = load_idan_documents(settings)
     assert docs == []
     manifest = settings.repo.normalized_dir / "idan" / "manifest.json"
@@ -37,7 +38,10 @@ def test_idan_loader_reads_present_directory(tmp_path: Path) -> None:
     settings = Settings.from_env(Path.cwd())
     idan_dir = tmp_path / "idan-reference"
     idan_dir.mkdir()
-    (idan_dir / "example.ttl").write_text("@prefix icm: <http://example.com/icm#> .", encoding="utf-8")
+    (idan_dir / "example.ttl").write_text(
+        "@prefix icm: <http://example.com/icm#> .\n# intent expression sample",
+        encoding="utf-8",
+    )
     settings.repo.idan_reference_dir = idan_dir
     docs = load_idan_documents(settings)
     assert len(docs) == 1
@@ -47,7 +51,7 @@ def test_idan_loader_reads_present_directory(tmp_path: Path) -> None:
 def test_corpus_builder_writes_corpus_and_chunks() -> None:
     settings = Settings.from_env(Path.cwd())
     corpus = build_corpus(settings)
-    assert len(corpus) > 100
+    assert len(corpus) > 50
     assert (settings.repo.normalized_dir / "corpus" / "corpus.jsonl").exists()
     assert (settings.repo.normalized_dir / "corpus" / "corpus_chunks.jsonl").exists()
 

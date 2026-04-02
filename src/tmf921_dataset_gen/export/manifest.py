@@ -11,7 +11,7 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
     # Calculate quality metrics
     payloads = [record.model_dump(mode="json") for record in records]
     diversity_score = calculate_diversity_score(payloads)
-    bias_report = detect_bias(payloads, [record.metadata.taxonomy_target.model_dump() for record in records])
+    bias_report = detect_bias(payloads, [record.metadata.taxonomy_target for record in records])
 
     avg_quality = sum(record.metadata.quality_score for record in records) / len(records) if records else 0
     avg_semantic = sum(record.metadata.semantic_score for record in records) / len(records) if records else 0

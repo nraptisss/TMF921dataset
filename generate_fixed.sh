@@ -13,6 +13,20 @@ source .venv/bin/activate
 OUTPUT_DIR="output/10k_fixed_scoring"
 mkdir -p $OUTPUT_DIR
 
+append_jsonl() {
+    local source_file="$1"
+    if [ ! -f "$source_file" ]; then
+        return
+    fi
+    if [ -s "$COMBINED_FILE" ] && [ "$(tail -c 1 "$COMBINED_FILE" | wc -l)" -eq 0 ]; then
+        printf '\n' >> "$COMBINED_FILE"
+    fi
+    cat "$source_file" >> "$COMBINED_FILE"
+    if [ -s "$source_file" ] && [ "$(tail -c 1 "$source_file" | wc -l)" -eq 0 ]; then
+        printf '\n' >> "$COMBINED_FILE"
+    fi
+}
+
 echo "=============================================="
 echo "TMF921 Dataset Generation"
 echo "=============================================="
@@ -42,7 +56,7 @@ for ((i=0; i<$TOTAL_SAMPLES; i+=$BATCH_SIZE)); do
     
     # Append to combined file
     if [ -f "$BATCH_DIR/dataset.jsonl" ]; then
-        cat "$BATCH_DIR/dataset.jsonl" >> $COMBINED_FILE
+        append_jsonl "$BATCH_DIR/dataset.jsonl"
         BATCH_COUNT=$(wc -l < "$BATCH_DIR/dataset.jsonl")
         echo "  ✓ Generated $BATCH_COUNT samples"
     else
@@ -67,6 +81,17 @@ echo ""
 python -c "
 import json
 from datetime import datetime
+from pathlib import Path
+
+output_dir = Path('$OUTPUT_DIR')
+batch_manifests = []
+for manifest_path in sorted(output_dir.glob('batch_*/manifest.json')):
+    payload = json.loads(manifest_path.read_text())
+    batch_manifests.append({
+        'path': str(manifest_path),
+        'record_count': payload.get('record_count', 0),
+        'quality_metrics': payload.get('quality_metrics', {})
+    })
 
 manifest = {
     'generation_summary': {
@@ -89,13 +114,15 @@ manifest = {
             'local_files_only': True,
             'local_device': 'cuda:0',
             'local_dtype': 'bfloat16'
-        }
+        },
+        'batch_count': len(batch_manifests)
     },
     'scoring_fixes': {
         'semantic_score': 'Removed 0.75 floor in llm_judge',
         'realism_score': 'Removed 0.85 floor when anchored',
         'notes': 'Quality scores are now accurate without artificial boosting'
-    }
+    },
+    'batches': batch_manifests
 }
 
 with open('$OUTPUT_DIR/manifest.json', 'w') as f:

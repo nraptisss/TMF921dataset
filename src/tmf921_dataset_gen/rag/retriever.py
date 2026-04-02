@@ -32,13 +32,18 @@ class BalancedRetriever:
         )
         self.store = ChromaVectorStore(settings)
 
-    def build(self) -> int:
+    def build(self, force_rebuild: bool = False) -> int:
         chunks_path = self.settings.repo.normalized_dir / "corpus" / "corpus_chunks.jsonl"
         if chunks_path.exists():
             documents = [json.loads(line) for line in chunks_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         else:
             build_corpus(self.settings)
             documents = [json.loads(line) for line in chunks_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if not force_rebuild:
+            expected_count = len(documents)
+            current_count = self.store.count()
+            if expected_count > 0 and current_count == expected_count:
+                return current_count
         return self.store.index_documents(documents, self.embedder)
 
     def retrieve(self, query_text: str, top_k: int = 8, per_source: int = 2) -> list[dict[str, Any]]:

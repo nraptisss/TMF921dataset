@@ -50,6 +50,67 @@ from datetime import datetime, timezone
 import json
 import time
 
+
+def append_jsonl(target_path: Path, source_path: Path) -> None:
+    if not source_path.exists():
+        return
+    payload = source_path.read_text(encoding='utf-8')
+    if not payload:
+        return
+    if target_path.exists() and target_path.stat().st_size > 0:
+        with target_path.open('rb') as handle:
+            handle.seek(-1, 2)
+            if handle.read(1) != b'\n':
+                with target_path.open('a', encoding='utf-8') as writer:
+                    writer.write('\n')
+    with target_path.open('a', encoding='utf-8') as writer:
+        writer.write(payload)
+        if not payload.endswith('\n'):
+            writer.write('\n')
+
+
+def build_combined_manifest(output_base: Path, total_generated: int, generation_method: str) -> dict:
+    batch_manifests = []
+    quality_scores = []
+    semantic_scores = []
+    tio_scores = []
+    diversity_scores = []
+
+    for manifest_path in sorted(output_base.glob('batch_*/manifest.json')):
+        payload = json.loads(manifest_path.read_text(encoding='utf-8'))
+        batch_manifests.append({'path': str(manifest_path), 'record_count': payload.get('record_count', 0)})
+        metrics = payload.get('quality_metrics', {})
+        if 'average_quality_score' in metrics:
+            quality_scores.append(metrics['average_quality_score'])
+        if 'average_semantic_score' in metrics:
+            semantic_scores.append(metrics['average_semantic_score'])
+        if 'average_tio_compliance' in metrics:
+            tio_scores.append(metrics['average_tio_compliance'])
+        if 'diversity_score' in metrics:
+            diversity_scores.append(metrics['diversity_score'])
+
+    def average(values: list[float]) -> float | None:
+        if not values:
+            return None
+        return round(sum(values) / len(values), 4)
+
+    return {
+        'generation_summary': {
+            'total_samples': total_generated,
+            'generation_method': generation_method,
+            'generation_timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'batch_count': len(batch_manifests),
+        },
+        'quality_metrics': {
+            'average_quality_score': average(quality_scores),
+            'average_semantic_score': average(semantic_scores),
+            'average_tio_compliance': average(tio_scores),
+            'average_diversity_score': average(diversity_scores),
+        },
+        'batches': batch_manifests,
+    }
+
+
 def main():
     output_base = Path('output/10k_generated')
     output_base.mkdir(parents=True, exist_ok=True)
@@ -72,8 +133,7 @@ def main():
             existing = sum(1 for line in batch_file.read_text().splitlines() if line.strip())
             if existing >= batch_size:
                 print(f"Batch {batch_num}: skip ({existing} done)", flush=True)
-                with open(combined_file, 'a') as f:
-                    f.write(batch_file.read_text())
+                append_jsonl(combined_file, batch_file)
                 total_generated += existing
                 continue
 
@@ -86,20 +146,13 @@ def main():
             total_generated += len(records)
             print(f"Batch {batch_num}: {len(records)} samples in {elapsed:.1f}s (total: {total_generated})", flush=True)
             if batch_file.exists():
-                with open(combined_file, 'a') as f:
-                    f.write(batch_file.read_text())
+                append_jsonl(combined_file, batch_file)
         except Exception as e:
             print(f"ERROR batch {batch_num}: {e}", flush=True)
             import traceback
             traceback.print_exc()
 
-    manifest = {
-        "generation_summary": {
-            "total_samples": total_generated,
-            "generation_method": "heuristic_templates_mock_backend",
-            "generation_timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-    }
+    manifest = build_combined_manifest(output_base, total_generated, 'heuristic_templates_mock_backend')
     (output_base / 'manifest.json').write_text(json.dumps(manifest, indent=2))
     print(f"Done! Total: {total_generated}", flush=True)
 

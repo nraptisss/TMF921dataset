@@ -23,6 +23,7 @@ def test_extract_json_object_handles_fenced_json() -> None:
 
 
 def test_diversity_agent_uses_llm_rewrite_when_available(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_LLM_REWRITE", "true")
     settings = Settings.from_env(Path.cwd())
     agent = DiversityAgent(settings)
     monkeypatch.setattr(type(agent.router), "supports_generation", lambda self: True)
@@ -46,6 +47,7 @@ def test_translator_applies_llm_translation_options(monkeypatch) -> None:
         retrieved_context=[],
         seed_ids=["seed-001"],
         sample_index=1,
+        source_kpis={"latency_ms": 1.0, "reliability_percent": 99.999},
     )
     assert result["serialization"] == "turtle"
     assert result["tmf921_intent"]["name"] == "Local Slice Intent"

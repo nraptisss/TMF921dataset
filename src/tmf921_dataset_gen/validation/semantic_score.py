@@ -8,50 +8,61 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ..rag.embeddings import EmbeddingBackend, HashingEmbeddingModel
 
 
+def _first_float(pattern: str, text: str) -> float | None:
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return float(match.group(1))
+
+
+def _first_int(pattern: str, text: str) -> int | None:
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
 def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
-    """Enhanced KPI extraction using basic NLP patterns."""
-    import re
     lowered = text.lower()
+    kpis: dict[str, Any] = {}
 
-    kpis = {}
-    # Use regex for numbers with units
-    unit_patterns = {
-        'latency_ms': r'(\d+(?:\.\d+)?)\s*(ms|milliseconds?)',
-        'throughput_gbps': r'(\d+(?:\.\d+)?)\s*(gbps|gigabits?|gb/s)',
-        'throughput_mbps': r'(\d+(?:\.\d+)?)\s*(mbps|megabits?|mb/s)',
-        'energy_kwh': r'(\d+(?:\.\d+)?)\s*(kwh|kilowatt.?hours?)',
-        'percentage': r'(\d+(?:\.\d+)?)\s*%',
-    }
+    latency_ms = _first_float(r"latency[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)", lowered)
+    throughput_gbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:gbps|gigabits?|gb/s)", lowered)
+    throughput_mbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:mbps|megabits?|mb/s)", lowered)
+    energy_kwh = _first_float(r"energy(?:consumption)?[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:kwh|kilowatt.?hours?)", lowered)
+    reaction_time_ms = _first_float(r"(?:reactiontime|reaction time|corrective action within)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)", lowered)
+    device_count = _first_int(r"(?:devicecount|support for|for)[^0-9]{0,20}?(\d+)(?:\s*(?:devices?|robots?|sensors?|vehicles|users|people))?", lowered)
+    reliability_percent = _first_float(r"reliability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
+    availability_percent = _first_float(r"availability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
+    delivery_ratio_percent = _first_float(r"(?:packetdeliveryratio|packet delivery ratio|delivery ratio)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
+    report_match = re.search(r"(?:reports? every|reporting interval(?: of)?)\s*(\d+)\s*(seconds?|minutes?)", lowered, flags=re.IGNORECASE)
+    if report_match:
+        interval_value = int(report_match.group(1))
+        interval_unit = report_match.group(2).lower()
+        kpis["reporting_interval_seconds"] = interval_value * (60 if interval_unit.startswith("minute") else 1)
+    else:
+        reporting_interval_seconds = _first_int(r"reportinginterval[^0-9]{0,20}?(\d+)", lowered)
+        if reporting_interval_seconds is not None:
+            kpis["reporting_interval_seconds"] = reporting_interval_seconds
 
-    for key, pattern in unit_patterns.items():
-        match = re.search(pattern, lowered)
-        if match:
-            kpis[key] = float(match.group(1))
-
-    # Reliability/availability from percentages
-    if 'reliability' in lowered and 'percentage' in kpis:
-        kpis['reliability_percent'] = kpis['percentage']
-    if 'availability' in lowered and 'percentage' in kpis:
-        kpis['availability_percent'] = kpis['percentage']
-
-    # Count patterns
-    count_patterns = {
-        'count_users': r'(\d+)\s*(users?|people)',
-        'count_sensors': r'(\d+)\s*(sensors?)',
-        'count_devices': r'(\d+)\s*(devices?|robots?)',
-    }
-
-    for key, pattern in count_patterns.items():
-        match = re.search(pattern, lowered)
-        if match:
-            kpis[key] = int(match.group(1))
-
-    # Reporting interval
-    if '5 minutes' in lowered:
-        kpis['reporting_interval_seconds'] = 300
-    elif '60 seconds' in lowered:
-        kpis['reporting_interval_seconds'] = 60
-
+    if latency_ms is not None:
+        kpis["latency_ms"] = latency_ms
+    if throughput_gbps is not None:
+        kpis["throughput_gbps"] = throughput_gbps
+    if throughput_mbps is not None:
+        kpis["throughput_mbps"] = throughput_mbps
+    if energy_kwh is not None:
+        kpis["energy_kwh"] = energy_kwh
+    if reaction_time_ms is not None:
+        kpis["reaction_time_ms"] = reaction_time_ms
+    if device_count is not None:
+        kpis["device_count"] = device_count
+    if reliability_percent is not None:
+        kpis["reliability_percent"] = reliability_percent
+    if availability_percent is not None:
+        kpis["availability_percent"] = availability_percent
+    if delivery_ratio_percent is not None:
+        kpis["delivery_ratio_percent"] = delivery_ratio_percent
     return kpis
 
 
@@ -79,20 +90,13 @@ def intent_payload_to_text(intent_payload: dict[str, Any]) -> str:
     expression_type = expression.get("@type", "")
     important_terms = [expression_type]
     if expression_type == "JsonLdExpression":
-        serialized = __import__("json").dumps(expression.get("expressionValue", {}), sort_keys=True)
-        for marker in ["DeliveryExpectation", "ReportingExpectation", "Negotiation", "energyConsumption", "latency", "throughput", "reliability"]:
-            if marker in serialized:
-                important_terms.append(marker)
+        important_terms.append(__import__("json").dumps(expression.get("expressionValue", {}), sort_keys=True))
     elif expression_type == "TurtleExpression":
-        ttl = expression.get("expressionValue", "")
-        for marker in ["DeliveryExpectation", "ReportingExpectation", "Negotiation", "energyConsumption", "latency", "throughput", "reliability"]:
-            if marker in ttl:
-                important_terms.append(marker)
+        important_terms.append(expression.get("expressionValue", ""))
     return " ".join(
         str(part)
         for part in [
             intent_payload.get("name", ""),
-            intent_payload.get("description", ""),
             intent_payload.get("context", ""),
             " ".join(important_terms),
         ]
@@ -108,6 +112,30 @@ def _token_overlap(lhs: str, rhs: str) -> float:
     return len(left_tokens & right_tokens) / len(left_tokens | right_tokens)
 
 
+def _numeric_match(lhs: Any, rhs: Any) -> float:
+    try:
+        left = float(lhs)
+        right = float(rhs)
+    except (TypeError, ValueError):
+        return 1.0 if lhs == rhs else 0.0
+    if left == right:
+        return 1.0
+    tolerance = max(abs(left) * 0.01, 1.0)
+    return max(0.0, 1.0 - (abs(left - right) / tolerance))
+
+
+def _kpi_match_score(nl_kpis: dict[str, Any], payload_kpis: dict[str, Any]) -> float:
+    if not nl_kpis:
+        return 0.0
+    scores: list[float] = []
+    for key, nl_value in nl_kpis.items():
+        if key not in payload_kpis:
+            scores.append(0.0)
+            continue
+        scores.append(_numeric_match(nl_value, payload_kpis[key]))
+    return sum(scores) / len(scores)
+
+
 def score_semantic_faithfulness(
     nl_intent: str,
     intent_payload: dict[str, Any],
@@ -118,15 +146,15 @@ def score_semantic_faithfulness(
     payload_text = intent_payload_to_text(intent_payload)
     payload_kpis = extract_kpis(payload_text)
 
-    overlap_keys = set(nl_kpis).intersection(payload_kpis)
-    overlap_score = len(overlap_keys) / max(1, len(set(nl_kpis)))
+    overlap_score = _kpi_match_score(nl_kpis, payload_kpis)
     lexical_overlap = _token_overlap(nl_intent, payload_text)
     nl_vec = embedder.embed_query(nl_intent)
     payload_vec = embedder.embed_query(payload_text)
     cosine = float(cosine_similarity([nl_vec], [payload_vec])[0][0])
-    # Use actual cosine similarity without artificial boosting
-    # Score combines overlap and cosine without artificial floors
-    score = max(0.0, min(1.0, (0.5 * overlap_score) + (0.5 * cosine)))
+    if nl_kpis:
+        score = max(0.0, min(1.0, (0.7 * overlap_score) + (0.2 * cosine) + (0.1 * lexical_overlap)))
+    else:
+        score = max(0.0, min(1.0, (0.75 * cosine) + (0.25 * lexical_overlap)))
     return {
         "cosine": cosine,
         "overlap": overlap_score,

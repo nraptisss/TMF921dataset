@@ -14,6 +14,20 @@ COMBINED_FILE="$OUTPUT_DIR/dataset.jsonl"
 
 mkdir -p "$OUTPUT_DIR"
 
+append_jsonl() {
+    local source_file="$1"
+    if [ ! -f "$source_file" ]; then
+        return
+    fi
+    if [ -s "$COMBINED_FILE" ] && [ "$(tail -c 1 "$COMBINED_FILE" | wc -l)" -eq 0 ]; then
+        printf '\n' >> "$COMBINED_FILE"
+    fi
+    cat "$source_file" >> "$COMBINED_FILE"
+    if [ -s "$source_file" ] && [ "$(tail -c 1 "$source_file" | wc -l)" -eq 0 ]; then
+        printf '\n' >> "$COMBINED_FILE"
+    fi
+}
+
 echo "=============================================="
 echo "TMF921 Dataset Generation - 10k samples"
 echo "Start: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -39,7 +53,7 @@ for ((i=0; i<$TOTAL_SAMPLES; i+=$BATCH_SIZE)); do
         EXISTING=$(wc -l < "$BATCH_DIR/dataset.jsonl" 2>/dev/null || echo "0")
         if [ "$EXISTING" -ge "$BATCH_SIZE" ]; then
             echo "  Batch $BATCH_NUM already complete ($EXISTING samples), skipping..."
-            cat "$BATCH_DIR/dataset.jsonl" >> "$COMBINED_FILE"
+            append_jsonl "$BATCH_DIR/dataset.jsonl"
             continue
         fi
     fi
@@ -49,7 +63,7 @@ for ((i=0; i<$TOTAL_SAMPLES; i+=$BATCH_SIZE)); do
 
     # Append to combined file
     if [ -f "$BATCH_DIR/dataset.jsonl" ]; then
-        cat "$BATCH_DIR/dataset.jsonl" >> "$COMBINED_FILE"
+        append_jsonl "$BATCH_DIR/dataset.jsonl"
         BATCH_COUNT=$(wc -l < "$BATCH_DIR/dataset.jsonl")
         TOTAL_SO_FAR=$(wc -l < "$COMBINED_FILE")
         echo "  Batch done: $BATCH_COUNT samples (total so far: $TOTAL_SO_FAR)"
@@ -73,6 +87,17 @@ echo "=============================================="
 python -c "
 import json
 from datetime import datetime
+from pathlib import Path
+
+output_dir = Path('$OUTPUT_DIR')
+batch_manifests = []
+for manifest_path in sorted(output_dir.glob('batch_*/manifest.json')):
+    payload = json.loads(manifest_path.read_text())
+    batch_manifests.append({
+        'path': str(manifest_path),
+        'record_count': payload.get('record_count', 0),
+        'quality_metrics': payload.get('quality_metrics', {})
+    })
 
 manifest = {
     'generation_summary': {
@@ -91,8 +116,10 @@ manifest = {
             'local_device': 'cuda:0',
             'local_dtype': 'bfloat16',
             'thinking_disabled': True
-        }
-    }
+        },
+        'batch_count': len(batch_manifests)
+    },
+    'batches': batch_manifests
 }
 
 with open('$OUTPUT_DIR/manifest.json', 'w') as f:

@@ -49,7 +49,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
     if not report.ok:
         _print_messages(report.errors, "ERROR")
         return 1
-    records = run_generation(settings, count=args.count, output_dir=None)
+    output_dir = Path(args.output) if getattr(args, 'output', None) else None
+    records = run_generation(settings, count=args.count, output_dir=output_dir)
     print(json.dumps({"generated_records": len(records)}, indent=2))
     return 0
 
@@ -102,6 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     generate_parser = subparsers.add_parser("generate")
     generate_parser.add_argument("--count", type=int, default=100)
+    generate_parser.add_argument("--output", help="Output directory to save dataset")
     generate_parser.set_defaults(func=cmd_generate)
 
     sample_parser = subparsers.add_parser("sample")

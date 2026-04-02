@@ -63,13 +63,20 @@ LOCAL_FILES_ONLY=true
 LOCAL_DEVICE=cuda:0
 LOCAL_DTYPE=bfloat16
 LOCAL_MAX_NEW_TOKENS=1024
+LOCAL_PLANNING_MAX_NEW_TOKENS=160
 LOCAL_TOP_P=0.9
 LOCAL_USE_4BIT=false
+FAST_MODE=true
+ENABLE_LLM_REWRITE=false
+ENABLE_LLM_TRANSLATION_HINTS=true
+ENABLE_LLM_SEMANTIC_REVIEW=false
 ```
 
 > **Note**: The Qwen3.5-4B model weights are not bundled in this repo. Use the 9B model for both roles — it fits comfortably on an RTX 6000 Ada (51 GB VRAM). Clear `LOCAL_EMBEDDING_MODEL_PATH` to fall back to `HashingVectorizer` embeddings when `BAAI/bge-large-en-v1.5` is not available locally.
 
 `LOCAL_FILES_ONLY=true` ensures the runtime never tries to fetch model weights from the network. Pre-download the models to the mounted paths above.
+
+`FAST_MODE=true` keeps the translator's model-assisted hinting enabled but disables the slower optional rewrite and critic-judge LLM passes. This is the recommended profile for large local GPU runs.
 
 ## Commands
 

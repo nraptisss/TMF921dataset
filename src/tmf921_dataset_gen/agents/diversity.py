@@ -213,7 +213,7 @@ class DiversityAgent:
         return nl_intent
 
     def _llm_rewrite(self, baseline_intent: str, taxonomy_target: dict[str, Any], seed: dict[str, Any], kpis: dict[str, Any]) -> str:
-        if not self.router.supports_generation():
+        if not self.settings.enable_llm_rewrite or not self.router.supports_generation():
             return baseline_intent
         prompt = f"""
 You are generating a realistic 6G telecom natural-language intent for synthetic data.
@@ -238,7 +238,12 @@ Baseline intent:
 {baseline_intent}
 """.strip()
         try:
-            response = self.router.generate_json(prompt, model=self.settings.reasoning_model, temperature=0.7)
+            response = self.router.generate_json(
+                prompt,
+                model=self.settings.reasoning_model,
+                temperature=0.4,
+                max_new_tokens=self.settings.local_planning_max_new_tokens,
+            )
             candidate = str(response.get("nl_intent", "")).strip()
             if candidate:
                 return candidate
@@ -257,6 +262,7 @@ Baseline intent:
             "seed_ids": [seed["id"]],
             "metadata": {
                 "taxonomy_category": taxonomy_target["taxonomy_category"],
+                "taxonomy_target": dict(taxonomy_target),
                 "kpis": kpis,
                 "seed_id": seed["id"],
                 "generation_backend": self.settings.inference_backend,

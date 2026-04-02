@@ -15,7 +15,7 @@ The TMF921 Intent Management specification defines a standardized framework for 
 - Training of machine learning models for intent recognition in telecom domains
 - Benchmarking of intent-based network automation (IBNA) solutions
 
-Our dataset addresses this need by providing 1,000 synthetically generated but specification-compliant intent pairs, covering diverse scenarios across service, resource, and business layers.
+This project targets large synthetic corpora of specification-oriented intent pairs, covering diverse scenarios across service, resource, and business layers.
 
 ## Methodology
 
@@ -25,12 +25,12 @@ Our dataset addresses this need by providing 1,000 synthetically generated but s
 - **Software Stack**:
   - Ubuntu-based Linux environment
   - Python 3.13
-  - PyTorch 2.11.0 with CUDA 12.4
-  - Hugging Face Transformers 5.4.0
+  - PyTorch 2.5.x with a CUDA-compatible wheel matching the host driver
+  - Hugging Face Transformers 4.45+
   - Accelerate, Sentence-Transformers, BitsAndBytes for efficient inference
-- **Models** (all loaded locally in bfloat16 precision):
-  - Reasoning: `Qwen/Qwen3.5-9B` (9 billion parameters)
-  - Bulk generation: `Qwen/Qwen3.5-4B` (4 billion parameters)
+- **Models** (all loaded locally in bfloat16 precision when using the local backend):
+  - Reasoning: `Qwen/Qwen3.5-9B`
+  - Bulk generation: `Qwen/Qwen3.5-9B`
   - Embeddings: `BAAI/bge-large-en-v1.5` (for retrieval-augmented generation)
 
 ### 2. Pipeline Architecture
@@ -48,17 +48,13 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 - Top-k=5 relevant passages retrieved per generation step to ground outputs in domain knowledge
 
 #### c. Intent Generation (`generate`)
-- **Reasoning Model (Qwen3.5-9B)**: 
-  - Reads retrieved context and intent seed prompts
-  - Produces structured intermediate representations (JSON/YAML) describing:
-    - Intent type (Service, Resource, Business, Probe)
-    - Layer (service, resource, business)
-    - Key performance indicators (KPIs) and constraints
-    - Priority level and lifecycle status
-- **Bulk Model (Qwen3.5-4B)**:
-  - Takes reasoning output and converts it into:
-    - Natural language intent description (`nl_intent`)
-    - Formal TMF921 Intent_FVO expression (`tmf921_intent`) in either JSON-LD or Turtle serialization
+- **Diversity / Reasoning Step**:
+  - Samples taxonomy targets and structured KPI sets
+  - Produces a candidate natural-language intent, optionally rewritten by a local or remote LLM backend
+- **Translation Step**:
+  - Converts the structured KPI set into a TMF921 `Intent_FVO`
+  - Supports JSON-LD and Turtle serializations
+  - Can optionally use an LLM for naming/context hints, but preserves the sampled KPI values as the source of truth
 - Temperature: 0.7 (balanced creativity/consistency)
 - Max new tokens: 1024
 - Top-p: 0.9 (nucleus sampling)
@@ -72,7 +68,7 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 
 | Choice | Reasoning |
 |--------|-----------|
-| **Qwen 3.5 Family** | State-of-the-art open LLMs with strong reasoning, multilingual, and code capabilities. The 9B/4B split fits within 48GB VRAM while allowing concurrent reasoning + generation workloads. |
+| **Qwen 3.5 Family** | Strong open models for local generation. The current supported local profile uses 9B weights for both reasoning and translation roles. |
 | **bfloat16 Precision** | Provides near-FP32 numerical stability with half the memory footprint, critical for fitting large models on consumer/prosumer GPUs. |
 | **Local-Only Inference (`LOCAL_FILES_ONLY=true`)** | Eliminates latency, cost, and privacy concerns associated with API-dependent approaches. Enables air-gapped deployment for sensitive telecom environments. |
 | **Retrieval-Augmented Generation** | Mitigates hallucination by anchoring generated intents in verified domain documents (TR290, specification seeds). Improves realism and compliance scores. |
@@ -87,17 +83,17 @@ Each generated intent undergoes multiple validation checkpoints:
    - Intent_FVO objects validated against `TMF921_Intent_Management_v5.0.0.oas.yaml`
    - Reflected in `"schema_validity": 1.0` metadata field
 
-2. **TMF Open API (TIO) Compliance**:
-   - Checked against canonical TMF921 schema
-   - Indicated by `"tio_compliance": 1.0`
+2. **TIO Structural Compliance**:
+   - Checked for valid JSON-LD/Turtle structure, expectation semantics, and presence of concrete KPI constraints
+   - Reported as a score in `"tio_compliance"`
 
 3. **Semantic Consistency**:
-   - Automated checks ensure natural language description aligns with structured KPIs
-   - Captured in `"semantic_score"` (typically >0.96)
+   - Automated checks compare KPI values extracted from the natural-language intent against the formal expression content
+   - Captured in `"semantic_score"`
 
 4. **Realism Score**:
-   - Measures grounding fidelity to source corpus via embedding similarity
-   - Reflected in `"realism_score"` (typically >0.88)
+   - Measures grounding fidelity to retrieved source corpus passages
+   - Reflected in `"realism_score"`
 
 5. **Manual Spot-Checking**:
    - Random samples reviewed for linguistic quality and intent coherence
