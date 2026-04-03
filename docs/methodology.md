@@ -6,7 +6,7 @@ This document describes the end-to-end process used to generate a synthetic, pro
 
 The resulting dataset is available at:
 - Hugging Face Hub: https://huggingface.co/datasets/nraptisss/TMF921-Intents
-- Local repository: `output/large_dataset/` (contains `dataset.jsonl` and `manifest.json`)
+- Local run outputs: `output/<run_name>/` (for example `output/1k_qwen_gpu_fullpower/`)
 
 ## Motivation
 
@@ -62,7 +62,7 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 #### d. Grounded Sampling (`sample`)
 - Uses the same generation pipeline but constrains outputs using retrieved corpus passages
 - Ensures factual grounding in source materials (TR290, seeds, IDAN references)
-- Outputs directed to user-specified directory (e.g., `output/large_dataset/`)
+- Outputs directed to user-specified directory (for example, `output/1k_qwen_gpu_fullpower/`)
 
 ### 3. Key Technical Choices & Justifications
 
@@ -100,7 +100,7 @@ Each generated intent undergoes multiple validation checkpoints:
 
 ## Dataset Contents
 
-The dataset (`output/large_dataset/`) contains:
+Each generated dataset output directory contains:
 
 ### `dataset.jsonl`
 - Format: One JSON object per line (JSONL)

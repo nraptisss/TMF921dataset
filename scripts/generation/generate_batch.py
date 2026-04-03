@@ -4,12 +4,11 @@ Simple batch generation script to generate samples without CLI timeout issues.
 """
 
 import sys
-import json
 import time
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, 'src')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.graph.workflow import run_generation
@@ -45,9 +44,13 @@ def generate_batch(batch_size: int, output_dir: str):
         return None
 
 if __name__ == "__main__":
+    # Ensure relative paths (output/, artifacts/, .env) resolve consistently.
+    import os
+    os.chdir(str(REPO_ROOT))
+
     if len(sys.argv) < 3:
-        print("Usage: python generate_batch.py <batch_size> <output_dir>")
-        print("Example: python generate_batch.py 1000 output/test_batch")
+        print("Usage: python scripts/generation/generate_batch.py <batch_size> <output_dir>")
+        print("Example: python scripts/generation/generate_batch.py 1000 output/test_batch")
         sys.exit(1)
     
     batch_size = int(sys.argv[1])

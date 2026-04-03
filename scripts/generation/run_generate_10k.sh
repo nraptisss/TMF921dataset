@@ -1,10 +1,12 @@
 #!/bin/bash
 # Generate 10k TMF921 dataset samples with local GPU model
-# Run with: nohup bash run_generate_10k.sh > output/generate_10k.log 2>&1 &
+# Run with: nohup bash scripts/generation/run_generate_10k.sh > output/generate_10k.log 2>&1 &
 
 set -e
 
-cd /home/user/work/codex-dataset
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 source .venv/bin/activate
 
 OUTPUT_DIR="output/10k_gpu_generated"

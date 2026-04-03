@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 
-REPO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 os.chdir(str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / 'src'))
 
@@ -129,4 +129,6 @@ def main():
     print(f"\nDone! Total: {total_generated} samples", flush=True)
     print(f"Output: {combined_file}", flush=True)
 
-main()
+
+if __name__ == "__main__":
+    main()

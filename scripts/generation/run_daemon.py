@@ -3,17 +3,18 @@
 import os
 import sys
 import platform
+from pathlib import Path
 
-REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(REPO_ROOT, 'output', '10k_generated')
-LOG = os.path.join(OUTPUT_DIR, 'generate.log')
-PIDFILE = os.path.join(OUTPUT_DIR, 'pid.txt')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_DIR = REPO_ROOT / 'output' / '10k_generated'
+LOG = OUTPUT_DIR / 'generate.log'
+PIDFILE = OUTPUT_DIR / 'pid.txt'
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 if platform.system() == 'Windows':
     print("Error: daemon mode is not supported on Windows.")
-    print("Use generate_10k.py directly instead.")
+    print("Use scripts/generation/generate_10k.py directly instead.")
     sys.exit(1)
 
 # Fork to background
@@ -34,7 +35,7 @@ log = open(LOG, 'w', buffering=1)
 os.dup2(log.fileno(), 1)
 os.dup2(log.fileno(), 2)
 
-os.chdir(REPO_ROOT)
+os.chdir(str(REPO_ROOT))
 
 with open(PIDFILE, 'w') as f:
     f.write(str(os.getpid()))
@@ -42,8 +43,7 @@ with open(PIDFILE, 'w') as f:
 # Force mock backend BEFORE importing tmf921_dataset_gen
 os.environ['INFERENCE_BACKEND'] = 'mock'
 
-sys.path.insert(0, os.path.join(REPO_ROOT, 'src'))
-from pathlib import Path
+sys.path.insert(0, str(REPO_ROOT / 'src'))
 from tmf921_dataset_gen.config import Settings
 from tmf921_dataset_gen.graph.workflow import run_generation
 from datetime import datetime, timezone
@@ -156,4 +156,6 @@ def main():
     (output_base / 'manifest.json').write_text(json.dumps(manifest, indent=2))
     print(f"Done! Total: {total_generated}", flush=True)
 
-main()
+
+if __name__ == "__main__":
+    main()
