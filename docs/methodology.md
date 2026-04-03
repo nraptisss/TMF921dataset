@@ -80,7 +80,7 @@ The generation follows a modular, agent-based workflow implemented in the TMF921
 Each generated intent undergoes multiple validation checkpoints:
 
 1. **Schema Validation**: 
-   - Intent_FVO objects validated against `TMF921_Intent_Management_v5.0.0.oas.yaml`
+   - Intent_FVO objects validated against `resources/tmf921/TMF921_Intent_Management_v5.0.0.oas.yaml`
    - Reflected in `"schema_validity": 1.0` metadata field
 
 2. **TIO Structural Compliance**:

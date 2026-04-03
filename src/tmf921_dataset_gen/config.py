@@ -57,10 +57,11 @@ class RepoPaths:
     @classmethod
     def from_root(cls, root: Path) -> "RepoPaths":
         artifacts_dir = root / "artifacts"
+        tmf921_resources = root / "resources" / "tmf921"
         return cls(
             root=root,
-            postman_collection=root / "Intent Management.postman_collection.json",
-            oas_spec=root / "TMF921_Intent_Management_v5.0.0.oas.yaml",
+            postman_collection=tmf921_resources / "intent_management.postman_collection.json",
+            oas_spec=tmf921_resources / "TMF921_Intent_Management_v5.0.0.oas.yaml",
             tr290_dir=root / "tr290-docs",
             tr290_pdf=root / "tr290-docs" / "TR290_Intent_Common_Model_v3.0.0.pdf",
             tr290_docx=root / "tr290-docs" / "TR290_Intent_Common_Model_v3.0.0.docx",

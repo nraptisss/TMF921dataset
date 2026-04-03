@@ -191,8 +191,8 @@ Global report file:
 
 ## Reproducibility Notes
 
-- Canonical schema source: `TMF921_Intent_Management_v5.0.0.oas.yaml`
-- Postman examples source: `Intent Management.postman_collection.json`
+- Canonical schema source: `resources/tmf921/TMF921_Intent_Management_v5.0.0.oas.yaml`
+- Postman examples source: `resources/tmf921/intent_management.postman_collection.json`
 - TR290 extraction source: `tr290-docs/`
 - Seeds source: `seeds/seeds.jsonl`
 - Optional high-value grounding source: `idan-reference/`
