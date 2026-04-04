@@ -43,12 +43,13 @@ def test_translator_applies_llm_translation_options(monkeypatch) -> None:
     )
     result = translator.translate(
         nl_intent="Ensure URLLC latency below 1 ms with reliability 99.999%.",
-        taxonomy_target={"taxonomy_category": "service/urllc/predictive_assurance", "layer": "service", "traffic_profile": "urllc", "scenario_family": "predictive_assurance"},
+        taxonomy_target={"taxonomy_category": "service/urllc/predictive_assurance", "layer": "service", "traffic_profile": "urllc", "scenario_family": "predictive_assurance", "domain_context": "private campus"},
         retrieved_context=[],
         seed_ids=["seed-001"],
         sample_index=1,
         source_kpis={"latency_ms": 1.0, "reliability_percent": 99.999},
     )
     assert result["serialization"] == "turtle"
-    assert result["tmf921_intent"]["name"] == "Local Slice Intent"
-    assert result["tmf921_intent"]["context"] == "server-local"
+    assert "Predictive Assurance" in result["tmf921_intent"]["name"]
+    assert "service urllc predictive_assurance intent" in result["tmf921_intent"]["context"]
+    assert result["tmf921_intent"]["priority"] == "medium"

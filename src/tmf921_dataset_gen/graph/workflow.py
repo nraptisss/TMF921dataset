@@ -69,6 +69,7 @@ class WorkflowRunner:
                 "tmf921_intent": translated["tmf921_intent"],
                 "serialization": translated["serialization"],
                 "metadata": metadata,
+                "intent_frame": translated["intent_frame"],
                 "generation_timestamp": metadata.get("generation_timestamp", datetime.now(timezone.utc)),
             }
 
@@ -79,16 +80,33 @@ class WorkflowRunner:
                 state["serialization"],
                 state["taxonomy_target"],
                 state.get("retrieved_context", []),
+                state.get("intent_frame"),
                 state.get("refinement_count", 0),
             )
             metadata = {
                 **state.get("metadata", {}),
+                "accepted": report["accepted"],
                 "quality_score": report["quality_score"],
                 "tio_compliance": report["tio"]["score"],
                 "schema_validity": report["schema_validity"],
                 "realism_score": report["realism"]["score"],
                 "semantic_score": report["semantic"]["score"],
                 "validation_notes": report["notes"],
+                "constraint_alignment": {
+                    "semantic_pass": report["symbolic"]["semantic_pass"],
+                    "operator_pass": report["symbolic"]["operator_pass"],
+                    "constraint_coverage": report["symbolic"]["constraint_coverage"],
+                    "payload_constraints": report["symbolic"]["payload_constraints"],
+                },
+                "evidence_map": report["evidence"]["evidence_map"],
+                "semantic_pass": report["symbolic"]["semantic_pass"],
+                "operator_pass": report["symbolic"]["operator_pass"],
+                "constraint_coverage": report["symbolic"]["constraint_coverage"],
+                "unsupported_claim_count": report["evidence"]["unsupported_claim_count"],
+                "contradiction_count": report["symbolic"]["contradiction_count"],
+                "grounding_mode": self.settings.grounding_mode,
+                "grounding_pass": report["evidence"]["grounding_pass"],
+                "supported_claim_ratio": report["evidence"]["supported_claim_ratio"],
             }
             return {
                 **state,

@@ -21,6 +21,18 @@ class DatasetMetadata(BaseModel):
     retrieved_context_ids: list[str] = Field(default_factory=list)
     translation_backend: str | None = None
     generation_backend: str | None = None
+    intent_frame: dict[str, Any] = Field(default_factory=dict)
+    constraint_set: list[dict[str, Any]] = Field(default_factory=list)
+    constraint_alignment: dict[str, Any] = Field(default_factory=dict)
+    evidence_map: dict[str, list[str]] = Field(default_factory=dict)
+    semantic_pass: bool = False
+    operator_pass: bool = False
+    constraint_coverage: float = 0.0
+    unsupported_claim_count: int = 0
+    contradiction_count: int = 0
+    grounding_mode: str = "synthetic_semantic"
+    grounding_pass: bool = True
+    supported_claim_ratio: float = 0.0
 
 
 class DatasetRecord(BaseModel):

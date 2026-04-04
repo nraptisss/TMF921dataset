@@ -1,0 +1,31 @@
+{
+  "project": "tmf921-dataset-gen",
+  "record_count": 2000,
+  "hf_dataset_path": null,
+  "jsonl_path": "thousand_records_dataset/dataset.jsonl",
+  "embedding_model": "BAAI/bge-large-en-v1.5",
+  "configured_embedding_model": "BAAI/bge-large-en-v1.5",
+  "effective_embedding_backend": "sentence-transformers",
+  "reasoning_model": "Qwen/Qwen3.5-9B",
+  "bulk_model": "Qwen/Qwen3.5-9B",
+  "inference_backend": "local-transformers",
+  "quality_metrics": {
+    "average_quality_score": 0.792,
+    "average_semantic_score": 0.7329,
+    "average_tio_compliance": 1.0,
+    "diversity_score": 1.0,
+    "semantic_pass_rate": 1.0,
+    "operator_pass_rate": 1.0,
+    "average_supported_claim_ratio": 0.2362,
+    "unsupported_claims_ratio": 3.3195,
+    "bias_report": {
+      "bias_score": 0.0,
+      "notes": []
+    }
+  },
+  "grounding_mode": "synthetic_semantic",
+  "release_readiness": {
+    "automatic_gates_only": false,
+    "manual_review_required": true
+  }
+}

@@ -12,6 +12,7 @@ class GraphState(TypedDict, total=False):
     tmf921_intent: dict[str, Any]
     serialization: str
     metadata: dict[str, Any]
+    intent_frame: dict[str, Any]
     critic_report: dict[str, Any]
     refinement_count: int
     accepted: bool

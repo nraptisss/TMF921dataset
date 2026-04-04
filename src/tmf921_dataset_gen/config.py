@@ -110,6 +110,13 @@ class Settings:
     local_planning_max_new_tokens: int
     effective_embedding_model: str | None
     effective_embedding_backend: str | None
+    grounding_mode: str
+    grounding_similarity_threshold: float
+    require_manual_review_for_release: bool
+    release_semantic_pass_threshold: float
+    release_supported_claim_ratio_threshold: float
+    release_max_unsupported_claims_ratio: float
+    release_max_duplicate_ratio: float
 
     @property
     def is_local_model_backend(self) -> bool:
@@ -170,4 +177,11 @@ class Settings:
             local_planning_max_new_tokens=_env_int("LOCAL_PLANNING_MAX_NEW_TOKENS", 160),
             effective_embedding_model=None,
             effective_embedding_backend=None,
+            grounding_mode=_env("GROUNDING_MODE", "synthetic_semantic"),
+            grounding_similarity_threshold=_env_float("GROUNDING_SIMILARITY_THRESHOLD", 0.2),
+            require_manual_review_for_release=_env_bool("REQUIRE_MANUAL_REVIEW_FOR_RELEASE", True),
+            release_semantic_pass_threshold=_env_float("RELEASE_SEMANTIC_PASS_THRESHOLD", 0.95),
+            release_supported_claim_ratio_threshold=_env_float("RELEASE_SUPPORTED_CLAIM_RATIO_THRESHOLD", 0.8),
+            release_max_unsupported_claims_ratio=_env_float("RELEASE_MAX_UNSUPPORTED_CLAIMS_RATIO", 0.05),
+            release_max_duplicate_ratio=_env_float("RELEASE_MAX_DUPLICATE_RATIO", 0.02),
         )

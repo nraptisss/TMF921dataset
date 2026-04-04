@@ -1,0 +1,172 @@
+{
+  "record_count": 2000,
+  "grounding_mode": "synthetic_semantic",
+  "automatic_checks": {
+    "semantic_pass_rate": {
+      "actual": 1.0,
+      "threshold": 0.95,
+      "pass": true
+    },
+    "supported_claim_ratio": {
+      "actual": 0.2362,
+      "threshold": 0.8,
+      "pass": false
+    },
+    "unsupported_claims_ratio": {
+      "actual": 3.3195,
+      "threshold": 0.05,
+      "pass": false
+    },
+    "duplicate_ratio": {
+      "actual": 0.0,
+      "threshold": 0.02,
+      "pass": true
+    },
+    "operator_preservation_rate": {
+      "actual": 1.0,
+      "threshold": 0.9,
+      "pass": true
+    },
+    "semantic_preservation_rate": {
+      "actual": 0.0,
+      "threshold": 0.95,
+      "pass": false
+    }
+  },
+  "benchmark_results": {
+    "operator_preservation": {
+      "metric": "operator_preservation_rate",
+      "passed": 2000,
+      "total": 2000,
+      "rate": 1.0,
+      "failures": []
+    },
+    "missing_constraint_detection": {
+      "metric": "missing_constraint_detection_rate",
+      "passed": 0,
+      "total": 2000,
+      "rate": 0.0,
+      "failures": [
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "throughput_mbps",
+            "reliability_percent",
+            "energy_kwh"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "reliability_percent",
+            "device_count",
+            "latency_ms",
+            "energy_kwh"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "reliability_percent",
+            "reporting_interval_seconds",
+            "latency_ms"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "throughput_mbps",
+            "reliability_percent",
+            "energy_kwh"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "energy_kwh",
+            "device_count",
+            "delivery_ratio_percent"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "energy_kwh",
+            "device_count",
+            "delivery_ratio_percent"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "reliability_percent",
+            "device_count",
+            "latency_ms"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "throughput_mbps",
+            "reliability_percent"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "reliability_percent",
+            "latency_ms"
+          ]
+        },
+        {
+          "record_id": "unknown",
+          "missing_constraints": [
+            "energy_kwh",
+            "device_count",
+            "delivery_ratio_percent"
+          ]
+        }
+      ]
+    },
+    "semantic_preservation": {
+      "metric": "semantic_preservation_rate",
+      "passed": 0,
+      "total": 3,
+      "rate": 0.0,
+      "failures": []
+    },
+    "dataset_stats": {
+      "total_records": 2000,
+      "grounding_modes": {
+        "synthetic_semantic": 2000
+      },
+      "semantic_pass_rate": 1.0,
+      "unsupported_claim_rate": 3.3195,
+      "duplicate_rate": 0
+    },
+    "release_gates": {
+      "semantic_preservation_gate": false,
+      "unsupported_claim_gate": false,
+      "operator_preservation_gate": true,
+      "overall_pass": false
+    }
+  },
+  "automatic_gate_pass": false,
+  "manual_review": {
+    "required": true,
+    "status": "pending",
+    "rubric": [
+      "semantic faithfulness",
+      "tmf/tio correctness",
+      "grounding support",
+      "linguistic naturalness"
+    ],
+    "sample_size": 50
+  },
+  "release_blocked": true,
+  "release_status": "blocked",
+  "notes": [
+    "Release remains blocked until manual review is completed.",
+    "Benchmark suite executed with 5 tests."
+  ]
+}

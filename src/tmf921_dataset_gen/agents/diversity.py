@@ -81,6 +81,8 @@ class DiversityAgent:
             base["reporting_interval_seconds"] = rng.choice([60, 120, 300])
         if scenario == "predictive_assurance":
             base["reaction_time_ms"] = rng.randint(50, 300)
+        if scenario == "closed_loop_autonomy":
+            base["reaction_time_ms"] = rng.randint(30, 120)
 
         return base
 
@@ -142,6 +144,8 @@ class DiversityAgent:
             kpi_parts.append(f"corrective action within {kpis['reaction_time_ms']} ms")
         if "reporting_interval_seconds" in kpis:
             kpi_parts.append(f"fulfillment reports every {kpis['reporting_interval_seconds']} seconds")
+        if scenario == "closed_loop_autonomy" and "reaction_time_ms" in kpis:
+            kpi_parts.append(f"if degradation is detected, trigger failover within {kpis['reaction_time_ms']} ms")
         
         kpis_str = ", ".join(kpi_parts) if kpi_parts else "standard performance"
         
@@ -191,7 +195,10 @@ class DiversityAgent:
                 fragments.append(f"with fulfillment reports every {kpis['reporting_interval_seconds']} seconds")
             fragments.append(f"for the {scenario.replace('_', ' ')} scenario.")
             nl_intent = ", ".join(fragments[:-1]) + " " + fragments[-1]
-        
+
+        if scenario == "closed_loop_autonomy" and "reaction_time_ms" in kpis and "failover" not in nl_intent.lower():
+            nl_intent = f"{nl_intent.rstrip('.')} If degradation occurs, trigger failover within {kpis['reaction_time_ms']} ms."
+
         return nl_intent
 
     def _llm_rewrite(self, baseline_intent: str, taxonomy_target: dict[str, Any], seed: dict[str, Any], kpis: dict[str, Any]) -> str:

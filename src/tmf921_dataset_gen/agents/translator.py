@@ -11,6 +11,7 @@ from ..llm import LLMRouter
 from ..models.generated.tmf921_models import IntentFVO
 from ..validation.jsonschema_validator import TMFJsonSchemaValidator
 from ..validation.semantic_score import extract_kpis
+from ..validation.semantic_frame import build_intent_frame, canonical_context, canonical_name
 
 
 ICM_CONTEXT = {
@@ -44,6 +45,7 @@ class TranslatorAgent:
         return "high"
 
     def _llm_translation_options(self, nl_intent: str, taxonomy_target: dict[str, Any], kpis: dict[str, Any], context: list[dict[str, Any]], sample_index: int) -> dict[str, Any]:
+        # Restricted LLM role: only for priority and serialization hints, not name/context
         if not self.settings.enable_llm_translation_hints or not self.router.supports_generation():
             return {}
         default_serialization = self.choose_serialization(sample_index)
@@ -52,12 +54,12 @@ class TranslatorAgent:
 Context from knowledge base:
 {context_text}
 
-Translate the following intent to TMF921 format:
+Planning TMF921 translation hints:
 
-You are planning a TMF921 translation step for a local telecom intent dataset generator.
-Return JSON only with these optional keys:
-{{"name": "...", "context": "...", "priority": "critical|high|medium|low", "serialization": "json-ld|turtle"}}
-Do not invent KPI values or change the request meaning.
+You are assisting a TMF921 translation system. Return JSON only with optional keys for priority and serialization hints.
+Do not provide name or context - these will be derived from the normalized frame.
+
+Optional keys: {{"priority": "critical|high|medium|low", "serialization": "json-ld|turtle"}}
 
 Taxonomy target:
 {json.dumps(taxonomy_target, indent=2)}
@@ -81,35 +83,43 @@ Natural-language intent:
         except Exception:
             return {}
 
-    def _expression_params(self, kpis: dict[str, Any], taxonomy_target: dict[str, Any]) -> dict[str, Any]:
+    def _operator_key(self, operator: str, metric_key: str) -> str:
+        if operator in {"at_most", "within", "trigger_within"}:
+            return "icm:atMost"
+        if operator == "at_least":
+            return "icm:atLeast"
+        if operator in {"periodic_every", "exactly"} or metric_key == "device_count":
+            return "icm:value"
+        return "icm:value"
+
+    def _expression_params(self, intent_frame: dict[str, Any]) -> dict[str, Any]:
         params: dict[str, Any] = {
-            "icm:targetDescription": f"6G {taxonomy_target['layer']} {taxonomy_target['traffic_profile']} intent",
+            "icm:targetDescription": f"6G {intent_frame['layer']} {intent_frame['traffic_profile']} intent",
         }
-        if "latency_ms" in kpis:
-            params["met:latency"] = [{"icm:atMost": f"{kpis['latency_ms']} ms"}]
-        if "throughput_mbps" in kpis:
-            params["met:throughput"] = [{"icm:atLeast": f"{kpis['throughput_mbps']} Mbps"}]
-        if "throughput_gbps" in kpis:
-            params["met:throughput"] = [{"icm:atLeast": f"{kpis['throughput_gbps']} Gbps"}]
-        if "reliability_percent" in kpis:
-            params["met:reliability"] = [{"icm:atLeast": f"{kpis['reliability_percent']} %"}]
-        if "availability_percent" in kpis:
-            params["met:availability"] = [{"icm:atLeast": f"{kpis['availability_percent']} %"}]
-        if "energy_kwh" in kpis:
-            params["met:energyConsumption"] = [{"icm:atMost": f"{kpis['energy_kwh']} kWh"}]
-        if "device_count" in kpis:
-            params["sli:deviceCount"] = [{"icm:value": str(kpis['device_count'])}]
-        if "delivery_ratio_percent" in kpis:
-            params["met:packetDeliveryRatio"] = [{"icm:atLeast": f"{kpis['delivery_ratio_percent']} %"}]
-        if "reaction_time_ms" in kpis:
-            params["met:reactionTime"] = [{"icm:atMost": f"{kpis['reaction_time_ms']} ms"}]
-        if "reporting_interval_seconds" in kpis:
-            params["icm:reportingInterval"] = [{"icm:value": str(kpis['reporting_interval_seconds'])}]
+        unit_suffixes = {
+            "latency_ms": "ms",
+            "throughput_mbps": "Mbps",
+            "throughput_gbps": "Gbps",
+            "reliability_percent": "%",
+            "availability_percent": "%",
+            "energy_kwh": "kWh",
+            "delivery_ratio_percent": "%",
+            "reaction_time_ms": "ms",
+            "reporting_interval_seconds": "",
+            "device_count": "",
+        }
+        for constraint in intent_frame.get("constraints", []):
+            payload_key = constraint["payload_key"]
+            metric_key = constraint["metric"]
+            operator_key = self._operator_key(constraint["operator"], metric_key)
+            suffix = unit_suffixes.get(metric_key, "")
+            rendered_value = f"{constraint['value']} {suffix}".strip()
+            params.setdefault(payload_key, []).append({operator_key: rendered_value})
         return params
 
-    def _build_jsonld_expression(self, slug: str, kpis: dict[str, Any], taxonomy_target: dict[str, Any]) -> dict[str, Any]:
-        params = self._expression_params(kpis, taxonomy_target)
-        expectation_type = "icm:ReportingExpectation" if taxonomy_target["scenario_family"] == "reporting" else "icm:DeliveryExpectation"
+    def _build_jsonld_expression(self, slug: str, intent_frame: dict[str, Any]) -> dict[str, Any]:
+        params = self._expression_params(intent_frame)
+        expectation_type = intent_frame["expectation_type"]
         return {
             "@type": "JsonLdExpression",
             "@baseType": "IntentExpression",
@@ -133,9 +143,9 @@ Natural-language intent:
             },
         }
 
-    def _build_turtle_expression(self, slug: str, kpis: dict[str, Any], taxonomy_target: dict[str, Any]) -> dict[str, Any]:
-        params = self._expression_params(kpis, taxonomy_target)
-        expectation_type = "icm:ReportingExpectation" if taxonomy_target["scenario_family"] == "reporting" else "icm:DeliveryExpectation"
+    def _build_turtle_expression(self, slug: str, intent_frame: dict[str, Any]) -> dict[str, Any]:
+        params = self._expression_params(intent_frame)
+        expectation_type = intent_frame["expectation_type"]
         param_lines = []
         param_ids = []
         param_counter = 1
@@ -187,20 +197,21 @@ Natural-language intent:
     ) -> dict[str, Any]:
         kpis = dict(source_kpis or extract_kpis(nl_intent))
         translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, retrieved_context, sample_index)
-        slug_source = translation_hints.get("name") or f"{taxonomy_target['taxonomy_category']}-{sample_index}"
+        intent_frame = build_intent_frame(nl_intent, taxonomy_target, kpis)
+        slug_source = f"{taxonomy_target['taxonomy_category']}-{sample_index}"
         slug = self._slugify(slug_source)
         serialization = translation_hints.get("serialization") or self.choose_serialization(sample_index)
         expression = (
-            self._build_jsonld_expression(slug, kpis, taxonomy_target)
+            self._build_jsonld_expression(slug, intent_frame)
             if serialization == "json-ld"
-            else self._build_turtle_expression(slug, kpis, taxonomy_target)
+            else self._build_turtle_expression(slug, intent_frame)
         )
         payload = {
             "@type": "Intent" if serialization == "json-ld" else "ProbeIntent",
-            "name": str(translation_hints.get("name") or slug.replace("-", " ").title().replace(" ", "-")),
+            "name": canonical_name(intent_frame),
             "description": nl_intent,
             "priority": str(translation_hints.get("priority") or self._priority_for(taxonomy_target)),
-            "context": str(translation_hints.get("context") or f"6g-{taxonomy_target['layer']}-{taxonomy_target['scenario_family']}"),
+            "context": canonical_context(intent_frame),
             "version": "1.0",
             "lifecycleStatus": "active",
             "expression": expression,
@@ -220,21 +231,26 @@ Natural-language intent:
                 "generation_timestamp": datetime.now(timezone.utc),
                 "retrieved_context_ids": [row["id"] for row in retrieved_context],
                 "translation_backend": self.settings.inference_backend,
+                "intent_frame": intent_frame,
+                "constraint_set": intent_frame.get("constraints", []),
+                "grounding_mode": self.settings.grounding_mode,
             },
+            "intent_frame": intent_frame,
         }
 
-    def repair_payload(self, payload: dict[str, Any], taxonomy_target: dict[str, Any], serialization: str) -> dict[str, Any]:
+    def repair_payload(self, payload: dict[str, Any], taxonomy_target: dict[str, Any], serialization: str, intent_frame: dict[str, Any] | None = None) -> dict[str, Any]:
         repaired = deepcopy(payload)
+        intent_frame = intent_frame or build_intent_frame(str(payload.get("description", "")), taxonomy_target, {})
         repaired.setdefault("@type", "Intent" if serialization == "json-ld" else "ProbeIntent")
-        repaired.setdefault("name", self._slugify(taxonomy_target["taxonomy_category"]))
+        repaired.setdefault("name", canonical_name(intent_frame))
         repaired.setdefault("description", taxonomy_target["taxonomy_category"])
         repaired.setdefault("priority", self._priority_for(taxonomy_target))
-        repaired.setdefault("context", f"6g-{taxonomy_target['layer']}-{taxonomy_target['scenario_family']}")
+        repaired.setdefault("context", canonical_context(intent_frame))
         repaired.setdefault("version", "1.0")
         if "expression" not in repaired:
             repaired["expression"] = (
-                self._build_jsonld_expression(self._slugify(repaired["name"]), {}, taxonomy_target)
+                self._build_jsonld_expression(self._slugify(repaired["name"]), intent_frame)
                 if serialization == "json-ld"
-                else self._build_turtle_expression(self._slugify(repaired["name"]), {}, taxonomy_target)
+                else self._build_turtle_expression(self._slugify(repaired["name"]), intent_frame)
             )
         return repaired

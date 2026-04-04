@@ -24,6 +24,7 @@ def test_exporter_writes_manifest_and_jsonl(tmp_path: Path) -> None:
     report = export_dataset_records(settings, [record], tmp_path)
     assert report.jsonl_path.exists()
     assert report.manifest_path.exists()
+    assert report.release_audit_path.exists()
     manifest = __import__("json").loads(report.manifest_path.read_text(encoding="utf-8"))
     assert manifest["quality_metrics"]["bias_report"]["bias_score"] == 0.0
 

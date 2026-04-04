@@ -8,6 +8,7 @@ from tmf921_dataset_gen.rag.embeddings import HashingEmbeddingModel
 from tmf921_dataset_gen.rag.retriever import BalancedRetriever
 from tmf921_dataset_gen.taxonomy.quota_planner import QuotaPlanner
 from tmf921_dataset_gen.validation.diversity_metrics import detect_bias
+from tmf921_dataset_gen.validation.semantic_frame import build_intent_frame, verify_semantic_alignment, attribute_evidence
 
 
 def test_quota_planner_covers_taxonomy_space() -> None:
@@ -119,3 +120,114 @@ def test_diversity_agent_keeps_core_kpis_for_predictive_assurance() -> None:
     assert "latency_ms" in kpis
     assert "reliability_percent" in kpis
     assert "reaction_time_ms" in kpis
+
+
+def test_diversity_agent_adds_reaction_time_for_closed_loop_autonomy() -> None:
+    settings = Settings.from_env(Path.cwd())
+    agent = DiversityAgent(settings)
+    target = {
+        "taxonomy_category": "service/embb/closed_loop_autonomy",
+        "layer": "service",
+        "traffic_profile": "embb",
+        "scenario_family": "closed_loop_autonomy",
+        "domain_context": "ai-native ran",
+    }
+    generated = agent.generate(target, 0)
+    assert "reaction_time_ms" in generated["metadata"]["kpis"]
+    assert "failover within" in generated["nl_intent"].lower()
+
+
+def test_symbolic_alignment_detects_contradictory_name() -> None:
+    taxonomy_target = {
+        "taxonomy_category": "service/urllc/reporting",
+        "layer": "service",
+        "traffic_profile": "urllc",
+        "scenario_family": "reporting",
+        "domain_context": "ai-native ran",
+    }
+    frame = build_intent_frame(
+        "Enable URLLC monitoring with reports every 60 seconds and latency below 2 ms.",
+        taxonomy_target,
+        {"latency_ms": 2.0, "reporting_interval_seconds": 60},
+    )
+    payload = {
+        "@type": "Intent",
+        "name": "Predictive Assurance URLLC Service Intent",
+        "context": "reporting context",
+        "expression": {
+            "@type": "JsonLdExpression",
+            "expressionValue": {
+                "@graph": [
+                    {
+                        "@type": "icm:ReportingExpectation",
+                        "icm:params": {
+                            "met:latency": [{"icm:atMost": "2 ms"}],
+                            "icm:reportingInterval": [{"icm:value": "60"}],
+                        },
+                    }
+                ]
+            },
+        },
+    }
+    result = verify_semantic_alignment("Enable URLLC monitoring with reports every 60 seconds and latency below 2 ms.", frame, payload)
+    assert result["semantic_pass"] is False
+    assert result["contradiction_count"] > 0
+
+
+def test_symbolic_alignment_detects_missing_failover_constraint() -> None:
+    taxonomy_target = {
+        "taxonomy_category": "service/embb/closed_loop_autonomy",
+        "layer": "service",
+        "traffic_profile": "embb",
+        "scenario_family": "closed_loop_autonomy",
+        "domain_context": "ai-native ran",
+    }
+    frame = build_intent_frame(
+        "If degradation occurs, trigger failover within 50 ms while keeping throughput at least 300 Mbps.",
+        taxonomy_target,
+        {"throughput_mbps": 300, "reaction_time_ms": 50},
+    )
+    payload = {
+        "@type": "Intent",
+        "name": "Closed Loop EMBB Service Intent for Ai Native Ran",
+        "context": "service embb closed_loop_autonomy intent in ai-native ran: throughput_mbps at_least 300 Mbps",
+        "expression": {
+            "@type": "JsonLdExpression",
+            "expressionValue": {
+                "@graph": [
+                    {
+                        "@type": "icm:DeliveryExpectation",
+                        "icm:params": {
+                            "met:throughput": [{"icm:atLeast": "300 Mbps"}],
+                        },
+                    }
+                ]
+            },
+        },
+    }
+    result = verify_semantic_alignment(
+        "If degradation occurs, trigger failover within 50 ms while keeping throughput at least 300 Mbps.",
+        frame,
+        payload,
+    )
+    assert result["semantic_pass"] is False
+    assert any("reaction_time_ms" in note for note in result["notes"])
+
+
+def test_attribute_evidence_rejects_unsupported_grounded_claims() -> None:
+    frame = {
+        "constraints": [{"metric": "latency_ms", "value": 2.0, "operator": "at_most", "unit": "ms", "payload_key": "met:latency"}],
+        "domain_context": "ai-native ran",
+        "scenario_family": "reporting",
+    }
+    retrieved_context = [
+        {
+            "id": "postman-1",
+            "text": "Delete a hub subscription",
+            "metadata": {"source_type": "postman_operation"},
+            "distance": 0.01,
+        }
+    ]
+    evidence = attribute_evidence(frame, retrieved_context, grounding_mode="grounded_corpus", similarity_threshold=0.2)
+    assert evidence["grounding_pass"] is False
+    assert evidence["unsupported_claim_count"] > 0

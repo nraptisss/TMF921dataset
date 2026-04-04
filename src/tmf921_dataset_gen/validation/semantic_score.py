@@ -30,7 +30,10 @@ def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
     throughput_gbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:gbps|gigabits?|gb/s)", lowered)
     throughput_mbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:mbps|megabits?|mb/s)", lowered)
     energy_kwh = _first_float(r"energy(?:consumption)?[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:kwh|kilowatt.?hours?)", lowered)
-    reaction_time_ms = _first_float(r"(?:reactiontime|reaction time|corrective action within)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)", lowered)
+    reaction_time_ms = _first_float(
+        r"(?:reactiontime|reaction time|corrective action within|failover to backup resources within|trigger .*? within|remediation .*? within|within)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)",
+        lowered,
+    )
     device_count = _first_int(r"(?:devicecount|support for|for)[^0-9]{0,20}?(\d+)(?:\s*(?:devices?|robots?|sensors?|vehicles|users|people))?", lowered)
     reliability_percent = _first_float(r"reliability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
     availability_percent = _first_float(r"availability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)

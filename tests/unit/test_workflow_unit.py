@@ -9,3 +9,5 @@ def test_run_generation_returns_requested_count(tmp_path: Path) -> None:
     settings.vector_index_dir = tmp_path / "cli-index"
     records = run_generation(settings, count=2, output_dir=None)
     assert len(records) == 2
+    assert all("intent_frame" in record["metadata"] for record in records)
+    assert all("constraint_alignment" in record["metadata"] for record in records)

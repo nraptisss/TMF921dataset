@@ -6,7 +6,7 @@ from typing import Any
 
 from ..config import Settings
 from ..models.dataset import DatasetRecord
-from .manifest import build_manifest
+from .manifest import build_manifest, build_release_audit
 
 
 @dataclass(slots=True)
@@ -16,6 +16,7 @@ class ExportReport:
     hf_dataset_path: Path | None
     jsonl_path: Path
     manifest_path: Path
+    release_audit_path: Path
 
 
 
@@ -38,10 +39,14 @@ def export_dataset_records(settings: Settings, records: list[DatasetRecord], out
     manifest = build_manifest(settings, records, hf_dataset_path, jsonl_path)
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(__import__("json").dumps(manifest, indent=2), encoding="utf-8")
+    release_audit = build_release_audit(settings, records)
+    release_audit_path = output_dir / "release_audit.json"
+    release_audit_path.write_text(__import__("json").dumps(release_audit, indent=2), encoding="utf-8")
     return ExportReport(
         output_dir=output_dir,
         record_count=len(records),
         hf_dataset_path=hf_dataset_path,
         jsonl_path=jsonl_path,
         manifest_path=manifest_path,
+        release_audit_path=release_audit_path,
     )
