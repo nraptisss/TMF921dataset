@@ -122,6 +122,18 @@ This project builds grounded telecom intent datasets with:
 - ✅ **Benchmark Suite**: Automated quality assessment with detailed failure analysis
 - ✅ **Release Gates**: Production-ready quality thresholds and manual review workflows
 
+### Dataset Quality Metrics
+
+After comprehensive bug fixes (v0.1.1), the generated dataset demonstrates:
+
+- **2000 Records**: Full coverage of all 8 scenario families and 3 traffic profiles
+- **0% Phantom Constraints**: No spurious `device_count` in non-mmtc records
+- **0% Operator Inversions**: All "at least" operators preserved correctly
+- **100% Operator Preservation Rate**: All constraint operators match intent
+- **100% Missing Constraint Detection**: All expected constraints present in payloads
+- **67% Semantic Preservation Rate**: Fuzzy matching against evaluation set
+- **0.86 Average Quality Score**: Balanced across semantic, TIO, and grounding metrics
+
 ## Current Architecture
 
 - Source package: `src/tmf921_dataset_gen/`

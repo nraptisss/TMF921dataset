@@ -84,8 +84,7 @@ def evaluate_tio_compliance(intent_payload: dict[str, Any]) -> dict[str, Any]:
             score += 0.3
         else:
             notes.append("JSON-LD expression is missing concrete KPI constraints")
-        if serialized:
-            score += 0.0
+        # serialized is always present for valid JSON-LD expressions; no scoring impact
     elif expression_type == "TurtleExpression":
         ttl = expression.get("expressionValue", "")
         try:
@@ -108,13 +107,9 @@ def evaluate_tio_compliance(intent_payload: dict[str, Any]) -> dict[str, Any]:
         except Exception as exc:
             notes.append(f"turtle parse failure: {exc}")
             graph = None
-        if TURTLE_INTENT_PATTERN.search(ttl):
-            score += 0.0
-        else:
+        if not TURTLE_INTENT_PATTERN.search(ttl):
             notes.append("turtle expression lacks core TIO terms")
-        if ttl.count("@prefix") >= 4:
-            score += 0.0
-        else:
+        if ttl.count("@prefix") < 4:
             notes.append("turtle expression is missing required prefixes")
     else:
         notes.append("unsupported expression type")

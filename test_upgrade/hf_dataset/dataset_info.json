@@ -1,0 +1,550 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "nl_intent": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "tmf921_intent": {
+      "@type": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "context": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "description": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "expression": {
+        "@baseType": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "@type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "expressionValue": {
+          "@context": {
+            "icm": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "idan": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "met": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "sli": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "t": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "xsd": {
+              "dtype": "string",
+              "_type": "Value"
+            }
+          },
+          "@graph": {
+            "feature": {
+              "@id": {
+                "dtype": "string",
+                "_type": "Value"
+              },
+              "@type": {
+                "dtype": "string",
+                "_type": "Value"
+              },
+              "icm:hasExpectation": {
+                "feature": {
+                  "@id": {
+                    "dtype": "string",
+                    "_type": "Value"
+                  }
+                },
+                "_type": "List"
+              },
+              "icm:intentOwner": {
+                "dtype": "string",
+                "_type": "Value"
+              },
+              "icm:params": {
+                "icm:reportingInterval": {
+                  "feature": {
+                    "icm:value": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "icm:targetDescription": {
+                  "dtype": "string",
+                  "_type": "Value"
+                },
+                "met:energyConsumption": {
+                  "feature": {
+                    "icm:atMost": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "met:latency": {
+                  "feature": {
+                    "icm:atMost": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "met:packetDeliveryRatio": {
+                  "feature": {
+                    "icm:atLeast": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "met:reliability": {
+                  "feature": {
+                    "icm:atLeast": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "met:throughput": {
+                  "feature": {
+                    "icm:atLeast": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                },
+                "sli:deviceCount": {
+                  "feature": {
+                    "icm:value": {
+                      "dtype": "string",
+                      "_type": "Value"
+                    }
+                  },
+                  "_type": "List"
+                }
+              },
+              "icm:target": {
+                "@id": {
+                  "dtype": "string",
+                  "_type": "Value"
+                }
+              }
+            },
+            "_type": "List"
+          }
+        },
+        "iri": {
+          "dtype": "string",
+          "_type": "Value"
+        }
+      },
+      "lifecycleStatus": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "name": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "priority": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "version": {
+        "dtype": "string",
+        "_type": "Value"
+      }
+    },
+    "serialization": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "metadata": {
+      "constraint_alignment": {
+        "constraint_coverage": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "operator_pass": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "payload_constraints": {
+          "feature": {
+            "metric": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "operator": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "payload_key": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "source": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "unit": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "value": {
+              "dtype": "float64",
+              "_type": "Value"
+            }
+          },
+          "_type": "List"
+        },
+        "semantic_pass": {
+          "dtype": "bool",
+          "_type": "Value"
+        }
+      },
+      "constraint_coverage": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "constraint_set": {
+        "feature": {
+          "metric": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "operator": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "payload_key": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "source": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "unit": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "value": {
+            "dtype": "float64",
+            "_type": "Value"
+          }
+        },
+        "_type": "List"
+      },
+      "contradiction_count": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "evidence_map": {
+        "delivery_ratio_percent": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "device_count": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "domain_context": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "energy_kwh": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "latency_ms": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "reliability_percent": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "reporting_interval_seconds": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "scenario_family": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        },
+        "throughput_mbps": {
+          "feature": {
+            "dtype": "null",
+            "_type": "Value"
+          },
+          "_type": "List"
+        }
+      },
+      "generation_backend": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "generation_timestamp": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "grounding_mode": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "grounding_pass": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "intent_frame": {
+        "constraints": {
+          "feature": {
+            "metric": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "operator": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "payload_key": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "source": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "unit": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "value": {
+              "dtype": "float64",
+              "_type": "Value"
+            }
+          },
+          "_type": "List"
+        },
+        "domain_context": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "event_required": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "event_trigger": {
+          "dtype": "null",
+          "_type": "Value"
+        },
+        "expectation_type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "grounding_claims": {
+          "feature": {
+            "claim_type": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "value": {
+              "dtype": "string",
+              "_type": "Value"
+            }
+          },
+          "_type": "List"
+        },
+        "layer": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "scenario_family": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "taxonomy_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "traffic_profile": {
+          "dtype": "string",
+          "_type": "Value"
+        }
+      },
+      "kpis": {
+        "delivery_ratio_percent": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "device_count": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "energy_kwh": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "latency_ms": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "reliability_percent": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "reporting_interval_seconds": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "throughput_mbps": {
+          "dtype": "int64",
+          "_type": "Value"
+        }
+      },
+      "operator_pass": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "quality_score": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "realism_score": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "retrieved_context_ids": {
+        "feature": {
+          "dtype": "null",
+          "_type": "Value"
+        },
+        "_type": "List"
+      },
+      "schema_validity": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "seed_id": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "semantic_pass": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "semantic_score": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "supported_claim_ratio": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "taxonomy_category": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "taxonomy_target": {
+        "domain_context": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "layer": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "ordinal": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "sample_index": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "scenario_family": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "taxonomy_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "traffic_profile": {
+          "dtype": "string",
+          "_type": "Value"
+        }
+      },
+      "tio_compliance": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "translation_backend": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "unsupported_claim_count": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "validation_notes": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "List"
+      }
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

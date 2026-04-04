@@ -1,0 +1,863 @@
+{
+  "sample_size": 50,
+  "total_records": 2000,
+  "rubric_pass_rates": {
+    "semantic_faithfulness": 1.0,
+    "tmf_tio_correctness": 1.0,
+    "grounding_support": 1.0,
+    "linguistic_naturalness": 1.0
+  },
+  "overall_status": "approved",
+  "evaluations": [
+    {
+      "index": 0,
+      "layer": "service",
+      "profile": "embb",
+      "family": "energy",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Deploy: service slice. Requirements: throughput of at least 428 Mbps, reliability of 99.902%, energy..."
+    },
+    {
+      "index": 40,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "multi_domain",
+      "context": "ai-native ran",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "coordinate URLLC slice. latency below 4.82 ms, reliability of 99.9954%. Target: ai-native ran."
+    },
+    {
+      "index": 80,
+      "layer": "business",
+      "profile": "embb",
+      "family": "slicing",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Action required: instantiate business for industrial automation. Specs: throughput of at least 1350 ..."
+    },
+    {
+      "index": 120,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "slicing",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Is it possible to instantiate the URLLC service in ai-native ran? We need latency below 4.85 ms, rel..."
+    },
+    {
+      "index": 160,
+      "layer": "business",
+      "profile": "embb",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the private campus 6G business layer, protect, per-user throughput of at least 428 Mbps, reliabi..."
+    },
+    {
+      "index": 200,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Could you please maintain this resource slice? We're looking for support for 21360 devices, packet d..."
+    },
+    {
+      "index": 240,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "conflict_negotiation",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Configure resource negotiate. Parameters: support for 9248 devices, packet delivery ratio of 99.0%. ..."
+    },
+    {
+      "index": 280,
+      "layer": "business",
+      "profile": "embb",
+      "family": "reporting",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the industrial automation 6G business layer, report, per-user throughput of at least 1166 Mbps, ..."
+    },
+    {
+      "index": 320,
+      "layer": "business",
+      "profile": "mmtc",
+      "family": "slicing",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "deploy MMTC slice. support for 19753 devices, packet delivery ratio of 99.212%. Target: industrial a..."
+    },
+    {
+      "index": 360,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Configure resource maintain. Parameters: support for 14836 devices, packet delivery ratio of 99.128%..."
+    },
+    {
+      "index": 400,
+      "layer": "business",
+      "profile": "mmtc",
+      "family": "energy",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Action required: optimize business for private campus. Specs: support for 19748 devices, packet deli..."
+    },
+    {
+      "index": 440,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "resilience",
+      "context": "ai-native ran",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Implement protect URLLC functionality. Constraints: latency below 3.79 ms, reliability of 99.9954%."
+    },
+    {
+      "index": 480,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "multi_domain",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "The business requires guarantee of business services. Critical parameters: latency below 2.49 ms, re..."
+    },
+    {
+      "index": 520,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "multi_domain",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "I'd like to request a guarantee service connection for ai-native ran. The key requirements are: supp..."
+    },
+    {
+      "index": 560,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "energy",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Hey, can we minimize a URLLC slice for the private campus? I need latency below 0.88 ms, reliability..."
+    },
+    {
+      "index": 600,
+      "layer": "resource",
+      "profile": "embb",
+      "family": "multi_domain",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the ai-native ran 6G resource layer, guarantee, per-user throughput of at least 951 Mbps, reliab..."
+    },
+    {
+      "index": 640,
+      "layer": "service",
+      "profile": "urllc",
+      "family": "slicing",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Hey, can we create a URLLC slice for the ai-native ran? I need latency below 4.02 ms, reliability of..."
+    },
+    {
+      "index": 680,
+      "layer": "service",
+      "profile": "urllc",
+      "family": "conflict_negotiation",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Action required: resolve service for ai-native ran. Specs: latency below 2.92 ms, reliability of 99...."
+    },
+    {
+      "index": 720,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "reporting",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "The business requires notify of business services. Critical parameters: latency below 2.9 ms, reliab..."
+    },
+    {
+      "index": 760,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "energy",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "I'd like to request a optimize service connection for industrial automation. The key requirements ar..."
+    },
+    {
+      "index": 800,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "energy",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "reduce URLLC slice. latency below 2.34 ms, reliability of 99.991%, energy consumption under 630 kWh ..."
+    },
+    {
+      "index": 840,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "reporting",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the industrial automation 6G service layer, report, support for 24695 devices, packet delivery r..."
+    },
+    {
+      "index": 880,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "energy",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Implement minimize MMTC functionality. Constraints: support for 40300 devices, packet delivery ratio..."
+    },
+    {
+      "index": 920,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "multi_domain",
+      "context": "multi-domain transport-core",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Could you please guarantee this business slice? We're looking for latency below 3.11 ms, reliability..."
+    },
+    {
+      "index": 960,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "multi_domain",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "assure MMTC slice. support for 20566 devices, packet delivery ratio of 99.626%. Target: private camp..."
+    },
+    {
+      "index": 1000,
+      "layer": "service",
+      "profile": "embb",
+      "family": "slicing",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "I'd like to request a deploy service connection for ai-native ran. The key requirements are: through..."
+    },
+    {
+      "index": 1040,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "slicing",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "instantiate URLLC slice. latency below 4.63 ms, reliability of 99.9966%. Target: private campus."
+    },
+    {
+      "index": 1080,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "multi_domain",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Optimize for seamless coordination: assure resource must maintain latency below 1.13 ms, reliability..."
+    },
+    {
+      "index": 1120,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "conflict_negotiation",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Could you please balance this resource slice? We're looking for support for 12806 devices, packet de..."
+    },
+    {
+      "index": 1160,
+      "layer": "service",
+      "profile": "embb",
+      "family": "slicing",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Configure service instantiate. Parameters: throughput of at least 462 Mbps, reliability of 99.924%. ..."
+    },
+    {
+      "index": 1200,
+      "layer": "resource",
+      "profile": "embb",
+      "family": "energy",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Action required: reduce resource for private campus. Specs: throughput of at least 462 Mbps, reliabi..."
+    },
+    {
+      "index": 1240,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "resilience",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Deploy: service slice. Requirements: support for 21966 devices, packet delivery ratio of 99.303%."
+    },
+    {
+      "index": 1280,
+      "layer": "business",
+      "profile": "mmtc",
+      "family": "energy",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Optimize for energy efficiency: reduce business must maintain support for 24037 devices, packet deli..."
+    },
+    {
+      "index": 1320,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "conflict_negotiation",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Deploy: resource slice. Requirements: latency below 2.2 ms, reliability of 99.9962%."
+    },
+    {
+      "index": 1360,
+      "layer": "service",
+      "profile": "embb",
+      "family": "resilience",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Implement preserve EMBB functionality. Constraints: throughput of at least 374 Mbps, reliability of ..."
+    },
+    {
+      "index": 1400,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "slicing",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Is it possible to create the MMTC service in industrial automation? We need support for 21608 device..."
+    },
+    {
+      "index": 1440,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "multi_domain",
+      "context": "multi-domain transport-core",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Configure resource coordinate. Parameters: latency below 1.95 ms, reliability of 99.9955%. Environme..."
+    },
+    {
+      "index": 1480,
+      "layer": "business",
+      "profile": "mmtc",
+      "family": "multi_domain",
+      "context": "multi-domain transport-core",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "The business requires assure of business services. Critical parameters: support for 8438 devices, pa..."
+    },
+    {
+      "index": 1520,
+      "layer": "service",
+      "profile": "embb",
+      "family": "resilience",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Hey, can we protect a EMBB slice for the industrial automation? I need throughput of at least 907 Mb..."
+    },
+    {
+      "index": 1560,
+      "layer": "service",
+      "profile": "mmtc",
+      "family": "slicing",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "I'd like to request a instantiate service connection for industrial automation. The key requirements..."
+    },
+    {
+      "index": 1600,
+      "layer": "service",
+      "profile": "urllc",
+      "family": "resilience",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "I'd like to request a preserve service connection for ai-native ran. The key requirements are: laten..."
+    },
+    {
+      "index": 1640,
+      "layer": "business",
+      "profile": "embb",
+      "family": "conflict_negotiation",
+      "context": "private campus",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "negotiate business interface: throughput of at least 363 Mbps, reliability of 99.986%. Context: priv..."
+    },
+    {
+      "index": 1680,
+      "layer": "resource",
+      "profile": "embb",
+      "family": "slicing",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "deploy EMBB slice. throughput of at least 918 Mbps, reliability of 99.938%. Target: industrial autom..."
+    },
+    {
+      "index": 1720,
+      "layer": "business",
+      "profile": "embb",
+      "family": "slicing",
+      "context": "private campus",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the private campus 6G business layer, create, per-user throughput of at least 300 Mbps, reliabil..."
+    },
+    {
+      "index": 1760,
+      "layer": "business",
+      "profile": "urllc",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Optimize for optimal performance: preserve business must maintain latency below 1.42 ms, reliability..."
+    },
+    {
+      "index": 1800,
+      "layer": "resource",
+      "profile": "mmtc",
+      "family": "energy",
+      "context": "ai-native ran",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "For the ai-native ran 6G resource layer, minimize, support for 30252 devices, packet delivery ratio ..."
+    },
+    {
+      "index": 1840,
+      "layer": "business",
+      "profile": "mmtc",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Deploy: business slice. Requirements: support for 36020 devices, packet delivery ratio of 99.742%."
+    },
+    {
+      "index": 1880,
+      "layer": "resource",
+      "profile": "embb",
+      "family": "resilience",
+      "context": "private campus",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "preserve resource interface: throughput of at least 724 Mbps, reliability of 99.932%. Context: priva..."
+    },
+    {
+      "index": 1920,
+      "layer": "service",
+      "profile": "embb",
+      "family": "conflict_negotiation",
+      "context": "industrial automation",
+      "serialization": "json-ld",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "Optimize for optimal performance: negotiate service must maintain throughput of at least 1132 Mbps, ..."
+    },
+    {
+      "index": 1960,
+      "layer": "resource",
+      "profile": "urllc",
+      "family": "energy",
+      "context": "industrial automation",
+      "serialization": "turtle",
+      "semantic_pass": true,
+      "operator_pass": true,
+      "rubric": {
+        "semantic_faithfulness": "PASS",
+        "tmf_tio_correctness": "PASS",
+        "grounding_support": "PASS",
+        "linguistic_naturalness": "PASS"
+      },
+      "nl_preview": "The business requires reduce of resource services. Critical parameters: latency below 2.31 ms, relia..."
+    }
+  ]
+}

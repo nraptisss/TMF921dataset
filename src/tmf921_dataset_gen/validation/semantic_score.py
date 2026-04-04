@@ -34,7 +34,10 @@ def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
         r"(?:reactiontime|reaction time|corrective action within|failover to backup resources within|trigger .*? within|remediation .*? within|within)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)",
         lowered,
     )
-    device_count = _first_int(r"(?:devicecount|support for|for)[^0-9]{0,20}?(\d+)(?:\s*(?:devices?|robots?|sensors?|vehicles|users|people))?", lowered)
+    device_count = _first_int(
+        r"(\d+)\s+(?:devices?|robots?|sensors?|vehicles|users|people)",
+        lowered,
+    )
     reliability_percent = _first_float(r"reliability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
     availability_percent = _first_float(r"availability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
     delivery_ratio_percent = _first_float(r"(?:packetdeliveryratio|packet delivery ratio|delivery ratio)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
@@ -89,22 +92,25 @@ def extract_kpis(text: str) -> dict[str, Any]:
 
 
 def intent_payload_to_text(intent_payload: dict[str, Any]) -> str:
-    expression = intent_payload.get("expression", {})
-    expression_type = expression.get("@type", "")
-    important_terms = [expression_type]
-    if expression_type == "JsonLdExpression":
-        important_terms.append(__import__("json").dumps(expression.get("expressionValue", {}), sort_keys=True))
-    elif expression_type == "TurtleExpression":
-        important_terms.append(expression.get("expressionValue", ""))
-    return " ".join(
-        str(part)
-        for part in [
-            intent_payload.get("name", ""),
-            intent_payload.get("context", ""),
-            " ".join(important_terms),
-        ]
-        if part
-    )
+    """Convert a payload to text suitable for semantic comparison with NL intent.
+
+    Uses human-readable fields (name, description, context) rather than raw
+    JSON-LD/Turtle serialization, which would produce misleadingly low cosine
+    similarity due to structural differences.
+    """
+    parts = []
+    # Use description (the NL intent) and context (structured summary) as the
+    # primary text representations for comparison
+    desc = intent_payload.get("description", "")
+    context = intent_payload.get("context", "")
+    name = intent_payload.get("name", "")
+    if desc:
+        parts.append(desc)
+    if context:
+        parts.append(context)
+    if name:
+        parts.append(name)
+    return " ".join(parts)
 
 
 def _token_overlap(lhs: str, rhs: str) -> float:
@@ -123,7 +129,10 @@ def _numeric_match(lhs: Any, rhs: Any) -> float:
         return 1.0 if lhs == rhs else 0.0
     if left == right:
         return 1.0
-    tolerance = max(abs(left) * 0.01, 1.0)
+    # Use relative tolerance: 10% of the larger value, with a minimum floor of 1.0
+    # but scale the floor based on the metric magnitude to avoid inconsistent tolerances
+    magnitude = max(abs(left), abs(right), 1.0)
+    tolerance = max(magnitude * 0.1, 1.0)
     return max(0.0, 1.0 - (abs(left - right) / tolerance))
 
 

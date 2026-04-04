@@ -20,9 +20,12 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
     avg_supported_claim_ratio = sum(record.metadata.supported_claim_ratio for record in records) / len(records) if records else 0
     semantic_pass_rate = sum(1 for record in records if record.metadata.semantic_pass) / len(records) if records else 0
     operator_pass_rate = sum(1 for record in records if record.metadata.operator_pass) / len(records) if records else 0
-    unsupported_claims_ratio = (
+    # Track both the ratio of records with unsupported claims AND the average count
+    records_with_unsupported = sum(1 for record in records if record.metadata.unsupported_claim_count > 0)
+    unsupported_claims_ratio = records_with_unsupported / max(1, len(records)) if records else 0.0
+    avg_unsupported_claims = (
         sum(record.metadata.unsupported_claim_count for record in records) / max(1, len(records))
-        if records else 0
+        if records else 0.0
     )
 
     effective_embedding_model = settings.effective_embedding_model or settings.embedding_model
@@ -50,6 +53,7 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
             "operator_pass_rate": round(operator_pass_rate, 4),
             "average_supported_claim_ratio": round(avg_supported_claim_ratio, 4),
             "unsupported_claims_ratio": round(unsupported_claims_ratio, 4),
+            "avg_unsupported_claims_per_record": round(avg_unsupported_claims, 4),
             "bias_report": bias_report,
         },
         "grounding_mode": settings.grounding_mode,
@@ -64,7 +68,10 @@ def build_release_audit(settings: Settings, records: list[DatasetRecord]) -> dic
     total = len(records)
     semantic_pass_rate = sum(1 for record in records if record.metadata.semantic_pass) / total if total else 0.0
     supported_claim_ratio = sum(record.metadata.supported_claim_ratio for record in records) / total if total else 0.0
-    unsupported_claims_ratio = (
+    # Track both the ratio of records with unsupported claims AND the average count
+    records_with_unsupported = sum(1 for record in records if record.metadata.unsupported_claim_count > 0)
+    unsupported_claims_ratio = records_with_unsupported / max(1, total) if total else 0.0
+    avg_unsupported_claims = (
         sum(record.metadata.unsupported_claim_count for record in records) / total
         if total else 0.0
     )

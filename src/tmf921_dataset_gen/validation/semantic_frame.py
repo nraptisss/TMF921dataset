@@ -54,19 +54,75 @@ def infer_expectation_type(scenario_family: str) -> str:
     return "icm:ReportingExpectation" if scenario_family == "reporting" else "icm:DeliveryExpectation"
 
 
+def _extract_metric_context(text: str, metric_key: str) -> str:
+    """Extract the text segment belonging to a specific metric for operator inference.
+
+    This prevents operator keywords from one metric (e.g., 'under' for energy)
+    from being incorrectly applied to another metric (e.g., throughput).
+
+    Strategy: find the position of this metric's mention, then extract text
+    from the previous metric boundary (or start) to the next metric boundary
+    (or end). This creates per-metric text segments.
+    """
+    spec = METRIC_SPECS.get(metric_key)
+    if not spec:
+        return text.lower()
+
+    lowered = text.lower()
+
+    # Find the position of this metric's first mention
+    metric_pos = -1
+    for alias in spec["aliases"]:
+        idx = lowered.find(alias.lower())
+        if idx != -1 and (metric_pos == -1 or idx < metric_pos):
+            metric_pos = idx
+
+    if metric_pos == -1:
+        return lowered
+
+    # Find all metric mention positions to determine segment boundaries
+    all_positions = []
+    for other_key, other_spec in METRIC_SPECS.items():
+        for alias in other_spec["aliases"]:
+            idx = lowered.find(alias.lower())
+            if idx != -1:
+                all_positions.append(idx)
+
+    all_positions.sort()
+    # Deduplicate positions (same position from different aliases/metrics)
+    all_positions = sorted(set(all_positions))
+
+    # This metric's segment: from THIS metric's position to the NEXT metric's position (or end).
+    # This ensures each metric only sees its own text, not the previous metric's operator keywords.
+    seg_start = metric_pos
+    seg_end = len(text)
+    for i, pos in enumerate(all_positions):
+        if pos == metric_pos:
+            # Next metric position defines end of this segment
+            if i + 1 < len(all_positions):
+                seg_end = all_positions[i + 1]
+            break
+
+    return text[seg_start:seg_end].lower()
+
+
 def infer_operator(text: str, metric_key: str, scenario_family: str) -> str:
     lowered = text.lower()
     if metric_key == "reporting_interval_seconds":
         return "periodic_every"
     if metric_key == "reaction_time_ms":
         return "trigger_within"
-    if OPERATOR_PATTERN_MAP["exactly"].search(lowered) and metric_key in {"device_count", "delivery_ratio_percent"}:
+
+    # Extract text local to this metric to avoid cross-metric operator contamination
+    local_text = _extract_metric_context(text, metric_key)
+
+    if OPERATOR_PATTERN_MAP["exactly"].search(local_text) and metric_key in {"device_count", "delivery_ratio_percent"}:
         return "exactly"
-    if OPERATOR_PATTERN_MAP["at_most"].search(lowered):
+    if OPERATOR_PATTERN_MAP["at_most"].search(local_text):
         return "at_most"
-    if OPERATOR_PATTERN_MAP["at_least"].search(lowered):
+    if OPERATOR_PATTERN_MAP["at_least"].search(local_text):
         return "at_least"
-    if OPERATOR_PATTERN_MAP["within"].search(lowered) and metric_key.endswith("_ms"):
+    if OPERATOR_PATTERN_MAP["within"].search(local_text) and metric_key.endswith("_ms"):
         return "within"
     return METRIC_SPECS[metric_key]["default_operator"]
 
@@ -187,6 +243,9 @@ def _jsonld_constraints(expression_value: dict[str, Any]) -> list[dict[str, Any]
                     "icm:atLeast": "at_least",
                     "icm:value": "exactly" if metric_key == "device_count" else METRIC_SPECS[metric_key]["default_operator"],
                 }.get(operator_key, operator_key.replace("icm:", "").lower())
+                # reaction_time_ms uses trigger_within in intent_frame but atMost in JSON-LD
+                if metric_key == "reaction_time_ms" and operator == "at_most":
+                    operator = "trigger_within"
                 constraints.append(_constraint_record(metric_key, _parse_metric_value(metric_key, raw_value), operator, "payload"))
     return constraints
 
@@ -321,12 +380,13 @@ def verify_semantic_alignment(
             value_mismatches.append(metric_key)
 
     payload_name = _normalize_text(str(payload.get("name", "")))
-    payload_context = _normalize_text(str(payload.get("context", "")))
     scenario = intent_frame["scenario_family"]
-    expected_keywords = SCENARIO_KEYWORDS.get(scenario, set())
+    # Only check name for contradictory scenarios — the context field contains
+    # structured operator names (trigger_within, at_most, etc.) that can false-positive
+    # against scenario keywords.
     contradictory_scenarios = {
         other for other, keywords in SCENARIO_KEYWORDS.items()
-        if other != scenario and any(keyword in payload_name or keyword in payload_context for keyword in keywords)
+        if other != scenario and any(keyword in payload_name for keyword in keywords)
     }
     if contradictory_scenarios:
         contradictions.extend([f"contradictory scenario token: {item}" for item in sorted(contradictory_scenarios)])

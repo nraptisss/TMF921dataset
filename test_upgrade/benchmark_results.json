@@ -1,0 +1,48 @@
+{
+  "operator_preservation": {
+    "metric": "operator_preservation_rate",
+    "passed": 5,
+    "total": 5,
+    "rate": 1.0,
+    "failures": []
+  },
+  "missing_constraint_detection": {
+    "metric": "missing_constraint_detection_rate",
+    "passed": 5,
+    "total": 5,
+    "rate": 1.0,
+    "failures": []
+  },
+  "semantic_preservation": {
+    "metric": "semantic_preservation_rate",
+    "passed": 2,
+    "total": 3,
+    "rate": 0.6666666666666666,
+    "failures": [
+      {
+        "nl_intent": "If degradation occurs, trigger failover within 50 ms for critical services...",
+        "reason": "no matching record found in dataset",
+        "gold_signature": [
+          "op:within",
+          "scenario:degradation",
+          "scenario:failover"
+        ]
+      }
+    ]
+  },
+  "dataset_stats": {
+    "total_records": 5,
+    "grounding_modes": {
+      "synthetic_semantic": 5
+    },
+    "semantic_pass_rate": 1.0,
+    "unsupported_claim_rate": 5.0,
+    "duplicate_rate": 0
+  },
+  "release_gates": {
+    "semantic_preservation_gate": false,
+    "unsupported_claim_gate": false,
+    "operator_preservation_gate": true,
+    "overall_pass": false
+  }
+}

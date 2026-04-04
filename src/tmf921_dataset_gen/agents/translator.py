@@ -84,7 +84,9 @@ Natural-language intent:
             return {}
 
     def _operator_key(self, operator: str, metric_key: str) -> str:
-        if operator in {"at_most", "within", "trigger_within"}:
+        if operator == "trigger_within":
+            return "icm:atMost"
+        if operator in {"at_most", "within"}:
             return "icm:atMost"
         if operator == "at_least":
             return "icm:atLeast"
@@ -195,7 +197,14 @@ Natural-language intent:
         sample_index: int,
         source_kpis: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        kpis = dict(source_kpis or extract_kpis(nl_intent))
+        # Use source_kpis when explicitly provided (even if empty); only extract
+        # from NL text when no source was given. This prevents the NLP extractor
+        # from injecting spurious KPIs (e.g., phantom device_count) when the
+        # diversity agent already determined the correct set.
+        if source_kpis is not None:
+            kpis = dict(source_kpis)
+        else:
+            kpis = extract_kpis(nl_intent)
         translation_hints = self._llm_translation_options(nl_intent, taxonomy_target, kpis, retrieved_context, sample_index)
         intent_frame = build_intent_frame(nl_intent, taxonomy_target, kpis)
         slug_source = f"{taxonomy_target['taxonomy_category']}-{sample_index}"
