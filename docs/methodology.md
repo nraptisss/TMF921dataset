@@ -6,7 +6,8 @@ This document describes the end-to-end process used to generate a synthetic, pro
 
 The resulting dataset is available at:
 - Hugging Face Hub: https://huggingface.co/datasets/nraptisss/TMF921-Intents
-- Local run outputs: `output/<run_name>/` (for example `output/1k_qwen_gpu_fullpower/`)
+- Local canonical dataset: `thousand_records_dataset/` (2000 records, full metadata)
+- Regression test dataset: `output/1k_qwen_gpu_fullpower/`
 
 ## Motivation
 
@@ -96,6 +97,9 @@ Each generated intent undergoes a layered validation stack designed for research
     - Primary rejection mechanism comparing normalized intent_frame with rendered payload constraints
     - Verifies operator preservation, constraint coverage, and semantic alignment
     - Rejects records with missing constraints, wrong operators, contradictory names/context, mismatched expectation types
+    - Operator inference uses per-metric text segmentation to avoid cross-metric contamination
+    - Trigger-threshold language (e.g., "if throughput drops below X") is detected and inverted to produce the correct target operator
+    - Metaphorical constraint language (e.g., "floor", "ceiling", "cap") is mapped to the correct operator
     - Reported in `"semantic_pass"`, `"operator_pass"`, `"constraint_coverage"`, `"contradiction_count"`
 
 4. **Evidence-Grounding Checks**:

@@ -1,5 +1,25 @@
 # Changelog & Troubleshooting Log
 
+## 2026-04-06: Operator Inference Fix for Trigger-Threshold and Metaphorical Language (v0.1.3)
+
+### Issue: Operator Inversion in Trigger-Threshold and Metaphorical Language
+- **Problem**: Two classes of NL phrasing caused incorrect operator mapping:
+  1. **Trigger-threshold language**: Phrases like "if throughput drops below 428 Mbps" were mapped to `at_most` (target cap) instead of `at_least` (floor). In a trigger context, "below X" means X is the minimum floor — the system should maintain throughput *at least* at 428 Mbps, and trigger corrective action if it falls below.
+  2. **Metaphorical language**: Words like "ceiling" (maximum) and "floor" (minimum) were not recognized by the operator pattern map.
+- **Impact**: Full scan of 2,500 generated records found 164 records (6.6%) with inverted operators: 115 from trigger-threshold language (55 "below/under" inversions + 60 "exceeds" inversions) and 49 from metaphorical language (33 "ceiling" + 16 "floor"). The symbolic verifier produced false positives because intent_frame and payload were internally consistent but both wrong relative to the NL intent.
+- **Root cause**: The `OPERATOR_PATTERN_MAP` matched "below/under" → `at_most` without considering trigger context, and did not include "floor"/"ceiling" patterns.
+- **Fix**:
+  1. Added `TRIGGER_THRESHOLD_PATTERN` regex to detect conditional trigger language (`if/when/upon/whenever ... drops below/falls under/dips below/exceeds/breaches/violations`). When detected, the operator is inverted: `at_most` → `at_least` (for "drops below") and `at_least` → `at_most` (for "exceeds").
+  2. Added `floor` to `at_least` pattern and `ceiling`/`cap` to `at_most` pattern.
+  3. Removed `exceeds?` from `at_least` pattern (it was incorrectly causing "latency exceeds 10 ms" to match `at_least`).
+- **Tests**: Added 14 new unit tests in `TestTriggerThresholdOperatorInference` and `TestMetaphoricalOperatorInference` classes.
+- **Verification**: All 109 unit tests pass. Full scan confirms fix resolves all 164 inversion patterns.
+- **Honesty note**: Datasets generated before this fix contain ~6.6% operator-inverted records. Regeneration is recommended for publication-quality datasets.
+
+### Test Infrastructure Fix
+- Fixed `test_workflow_unit.py` to use mock backend instead of local-transformers (was failing because test environment lacks GPU/model access).
+- Fixed `test_corpus_ingestion.py::test_idan_loader_handles_missing_directory` (was failing due to stale test fixtures).
+
 ## 2026-04-04: Critical Dataset Generation Bug Fixes (v0.1.1)
 
 ### Critical Issues Fixed
@@ -237,7 +257,42 @@ The 10k dataset was generated using the mock backend for practical speed. The GP
 
 ### Generated Dataset
 
-- **Location**: `output/10k_generated/dataset.jsonl`
-- **Samples**: 9,990 (10 batches of 999 each; ~99.9% acceptance rate)
+- **Location**: `thousand_records_dataset/dataset.jsonl`
+- **Samples**: 2000 (canonical release dataset)
 - **Format**: JSONL with `nl_intent`, `tmf921_intent`, `serialization`, `metadata` fields
-- **Manifest**: `output/10k_generated/manifest.json`
+- **Manifest**: `thousand_records_dataset/manifest.json`
+- **Release Audit**: `thousand_records_dataset/release_audit.json`
+
+## 2026-04-04: Codebase Cleanup and Organization (v0.1.2)
+
+### Cleanup Summary
+
+14 cleanup tasks completed across 4 severity levels. All 95 unit tests passing.
+
+#### Critical
+- Removed duplicate `run_semantic_preservation_test` method in `benchmark_suite.py` (128 lines of dead code)
+
+#### High
+- Deleted 16 stale `output/` directories (only `1k_qwen_gpu_fullpower/` retained for regression tests)
+- Deleted broken `benchmarks/run_llm_evaluation.py` (crashed on launch, redundant with `BenchmarkSuite`)
+- Fixed `workflow.py` generator consumption bug — `detect_bias` was receiving empty list due to consumed generator
+
+#### Medium
+- Moved `codex_upgrade_plan.md` and `verified_issues_report.md` to `docs/`
+- Updated `.env.example` with 12 missing environment variables
+- Deleted legacy `scripts/generation/generate_fixed.sh` (superseded one-time scoring fix)
+- Extracted shared code to `scripts/generation/common.py` (eliminated 95% duplication between generation scripts)
+- Added 4 new unit test files: `test_semantic_score.py`, `test_realism_score.py`, `test_diversity_metrics.py`, `test_tio_rules.py` (37 tests)
+- Deleted root-level `tmf921_dataset_gen/__init__.py` namespace package hack (`pyproject.toml` handles discovery)
+
+#### Low
+- Added `python-dotenv>=1.0` to `requirements.txt`
+- Standardized type hints in `llm.py` (Python 3.11+ `X | None` syntax, removed no-op `__post_init__`, added return type annotations)
+- Formalized `SentenceTransformerEmbeddingModel` protocol (added `@runtime_checkable`, explicit `EmbeddingBackend` inheritance)
+- Added "DEMO SCRIPT" docstring to `scripts/mock_intent_handler.py`
+- Fixed type annotation bug in `mock_intent_handler.py` (`str = None` → `str | None`)
+
+### Test Results
+
+- **95/95 tests passing** (0 failures)
+- New test coverage: semantic scoring, realism scoring, diversity metrics, TIO compliance rules

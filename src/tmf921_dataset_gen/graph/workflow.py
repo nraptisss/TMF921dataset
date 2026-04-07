@@ -151,6 +151,7 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
     planner = QuotaPlanner(settings)
     runner = WorkflowRunner(settings)
     accepted_records: list[DatasetRecord] = []
+    accepted_targets: list[dict[str, Any]] = []
     attempts = 0
     max_attempts = max(count * 3, count)
     taxonomy_targets = list(planner.plan_targets(max_attempts))
@@ -170,6 +171,7 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
                 metadata=metadata,
             )
         )
+        accepted_targets.append(taxonomy_target)
         if len(accepted_records) >= count:
             break
     print(f"Completed: {len(accepted_records)} accepted records from {attempts} attempts", flush=True)
@@ -177,7 +179,7 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
 
     # Calculate diversity and bias
     diversity_score = calculate_diversity_score(payloads)
-    bias_report = detect_bias(payloads, taxonomy_targets[:len(payloads)])
+    bias_report = detect_bias(payloads, accepted_targets)
 
     if output_dir is not None:
         export_dataset_records(settings, accepted_records, output_dir)

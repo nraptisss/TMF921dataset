@@ -274,3 +274,93 @@ class TestSemanticFrame:
 
         # Should detect the constraints correctly
         assert len(result["payload_constraints"]) == 2
+
+
+class TestTriggerThresholdOperatorInference:
+    """Test operator inference for trigger-threshold language.
+
+    E.g., 'if throughput drops below 428 Mbps' means throughput should be
+    maintained at_least 428 Mbps (428 is the floor, not a cap).
+    """
+
+    def test_drops_below_means_at_least(self):
+        """'if throughput drops below 428 Mbps' → throughput at_least 428."""
+        text = (
+            "if throughput drops below 428 Mbps or reliability falls under 99.917%, "
+            "the system automatically triggers corrective resource reallocation within 265 ms"
+        )
+        assert infer_operator(text, "throughput_mbps", "predictive_assurance") == "at_least"
+        assert infer_operator(text, "reliability_percent", "predictive_assurance") == "at_least"
+
+    def test_falls_under_means_at_least(self):
+        """'reliability falls under 99.9%' → reliability at_least 99.9."""
+        text = "if reliability falls under 99.9%, trigger corrective action"
+        assert infer_operator(text, "reliability_percent", "predictive_assurance") == "at_least"
+
+    def test_dips_below_means_at_least(self):
+        """'throughput dips below 500 Mbps' → throughput at_least 500."""
+        text = "when throughput dips below 500 Mbps, initiate remediation"
+        assert infer_operator(text, "throughput_mbps", "predictive_assurance") == "at_least"
+
+    def test_goes_below_means_at_least(self):
+        """'latency goes below 5 ms' → latency at_least 5 (unusual but consistent)."""
+        text = "if latency goes below 5 ms, alert the operator"
+        assert infer_operator(text, "latency_ms", "predictive_assurance") == "at_least"
+
+    def test_exceeds_means_at_most(self):
+        """'if latency exceeds 10 ms' → latency at_most 10."""
+        text = "if latency exceeds 10 ms, trigger failover"
+        assert infer_operator(text, "latency_ms", "predictive_assurance") == "at_most"
+
+    def test_breach_means_at_least(self):
+        """'if throughput breaches below 428 Mbps' → throughput at_least 428."""
+        text = "if throughput breaches below 428 Mbps, trigger remediation"
+        assert infer_operator(text, "throughput_mbps", "predictive_assurance") == "at_least"
+
+    def test_normal_below_still_at_most(self):
+        """'latency below 10 ms' (no trigger context) → latency at_most 10."""
+        text = "Ensure latency below 10 ms for the service"
+        assert infer_operator(text, "latency_ms", "provisioning") == "at_most"
+
+    def test_normal_under_still_at_most(self):
+        """'energy under 200 kWh' (no trigger context) → energy at_most 200."""
+        text = "Keep energy consumption under 200 kWh per day"
+        assert infer_operator(text, "energy_kwh", "energy") == "at_most"
+
+
+class TestMetaphoricalOperatorInference:
+    """Test operator inference for metaphorical constraint language.
+
+    E.g., 'throughput floor of 500 Mbps' → at_least 500,
+    'reliability ceiling of 99.9%' → at_most 99.9.
+    """
+
+    def test_floor_means_at_least(self):
+        """'555 Mbps throughput floor' → throughput at_least 555."""
+        text = "ensure a throughput floor of 555 Mbps"
+        assert infer_operator(text, "throughput_mbps", "reporting") == "at_least"
+
+    def test_ceiling_means_at_most(self):
+        """'99.981% reliability ceiling' → reliability at_most 99.981."""
+        text = "maintain a reliability ceiling of 99.981%"
+        assert infer_operator(text, "reliability_percent", "reporting") == "at_most"
+
+    def test_minimum_means_at_least(self):
+        """'minimum throughput of 220 Mbps' → throughput at_least 220."""
+        text = "guarantee a minimum throughput of 220 Mbps"
+        assert infer_operator(text, "throughput_mbps", "resilience") == "at_least"
+
+    def test_maximum_means_at_most(self):
+        """'maximum latency of 5 ms' → latency at_most 5."""
+        text = "enforce a maximum latency of 5 ms"
+        assert infer_operator(text, "latency_ms", "provisioning") == "at_most"
+
+    def test_cap_means_at_most(self):
+        """'latency capped at 3.41 ms' → latency at_most 3.41."""
+        text = "strict end-to-end latency capped at 3.41 ms"
+        assert infer_operator(text, "latency_ms", "energy") == "at_most"
+
+    def test_guarantee_means_at_least(self):
+        """'reliability guarantee of 99.9984%' → reliability at_least 99.9984."""
+        text = "a reliability guarantee of 99.9984%"
+        assert infer_operator(text, "reliability_percent", "energy") == "at_least"

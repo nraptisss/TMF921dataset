@@ -12,6 +12,10 @@ Synthetic, production-oriented pipeline for generating natural-language intents 
 - Docs index: `docs/README.md`
 - Methodology: `docs/methodology.md`
 - Original plan baseline: `docs/plan.md`
+- Upgrade plan: `docs/codex_upgrade_plan.md`
+- Issue reports: `docs/verified_issues_report.md`
+- Upgrade plan: `docs/codex_upgrade_plan.md`
+- Issue reports: `docs/verified_issues_report.md`
 
 ## What This Project Does
 
@@ -151,13 +155,16 @@ After comprehensive bug fixes (v0.1.1), the generated dataset demonstrates:
 ## Repository Layout
 
 - `src/`: implementation code
-- `tests/`: unit + integration tests
-- `docs/`: project documentation and methodology
-- `scripts/`: operational helper scripts
+- `tests/`: unit + integration tests (95 tests)
+- `docs/`: project documentation, methodology, and upgrade plans
+- `scripts/`: operational helper scripts and batch generators
 - `artifacts/`: normalized assets, indexes, reports
 - `seeds/`: synthetic seed records
 - `tr290-docs/`: TR290 source files
 - `idan-reference/`: IDAN reference submodule (recommended; required for large sample runs)
+- `output/`: generated datasets (only `1k_qwen_gpu_fullpower/` retained for regression tests)
+- `models/`: local model weights (Qwen 3.5 9B)
+- `thousand_records_dataset/`: canonical release dataset (2000 records)
 
 ## Supported Backends
 
@@ -280,6 +287,10 @@ GPU shell workflow:
 bash scripts/generation/run_generate_10k.sh
 ```
 
+Shared utilities: `scripts/generation/common.py` (used by batch scripts).
+
+Shared utilities: `scripts/generation/common.py` (used by batch scripts).
+
 ## Output Artifacts
 
 Typical run output directory contains:
@@ -333,6 +344,22 @@ docker run --gpus all --rm -it \
 ./.venv/bin/pytest -q tests/unit
 ./.venv/bin/pytest -q tests/integration
 ```
+
+Test coverage includes:
+- Agent behavior (diversity, translation, critique, symbolic alignment)
+- Schema ingestion and validation
+- RAG retrieval and embedding
+- Semantic scoring, realism scoring, diversity metrics
+- TIO compliance rules (JSON-LD and Turtle)
+- Workflow generation pipeline
+
+Test coverage includes:
+- Agent behavior (diversity, translation, critique, symbolic alignment)
+- Schema ingestion and validation
+- RAG retrieval and embedding
+- Semantic scoring, realism scoring, diversity metrics
+- TIO compliance rules (JSON-LD and Turtle)
+- Workflow generation pipeline
 
 ## Quality Controls
 

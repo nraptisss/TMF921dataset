@@ -2,20 +2,22 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Protocol, runtime_checkable
+
 
 from sklearn.feature_extraction.text import HashingVectorizer
 
 LOGGER = logging.getLogger(__name__)
 
 
+@runtime_checkable
 class EmbeddingBackend(Protocol):
     def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
     def embed_query(self, text: str) -> list[float]: ...
 
 
 @dataclass(slots=True)
-class HashingEmbeddingModel:
+class HashingEmbeddingModel(EmbeddingBackend):
     n_features: int = 1024
     vectorizer: HashingVectorizer = field(init=False, repr=False)
 
@@ -34,7 +36,7 @@ class HashingEmbeddingModel:
         return self.embed_documents([text])[0]
 
 
-class SentenceTransformerEmbeddingModel:
+class SentenceTransformerEmbeddingModel(EmbeddingBackend):
     def __init__(self, model_name: str, local_files_only: bool = False) -> None:
         from sentence_transformers import SentenceTransformer
 

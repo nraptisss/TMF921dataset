@@ -13,3 +13,5 @@ transformers>=4.45
 streamlit>=1.38
 requests>=2.32
 datasets>=2.21
+python-dotenv>=1.0
+python-dotenv>=1.0

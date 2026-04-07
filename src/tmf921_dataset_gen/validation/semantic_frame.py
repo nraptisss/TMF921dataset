@@ -33,13 +33,23 @@ METRIC_SPECS = {
 
 OPERATOR_PATTERN_MAP = {
     "exactly": re.compile(r"\b(exactly|strictly|equal to|must be exactly)\b", re.IGNORECASE),
-    "at_least": re.compile(r"\b(at least|minimum|min |no less than|exceeds?|greater than)\b", re.IGNORECASE),
-    "at_most": re.compile(r"\b(at most|under|below|less than|no more than|max(?:imum)?)\b", re.IGNORECASE),
+    "at_least": re.compile(r"\b(at least|minimum|min |no less than|greater than|floor)\b", re.IGNORECASE),
+    "at_most": re.compile(r"\b(at most|under|below|less than|no more than|max(?:imum)?|ceiling|cap)\b", re.IGNORECASE),
     "within": re.compile(r"\b(within)\b", re.IGNORECASE),
     "between": re.compile(r"\b(between)\b", re.IGNORECASE),
     "periodic_every": re.compile(r"\b(every|interval)\b", re.IGNORECASE),
     "trigger_within": re.compile(r"\b(trigger|failover|corrective action|remediation|heal(?:ing)?)\b", re.IGNORECASE),
 }
+
+# Patterns that indicate a metric value is a trigger threshold, not a target constraint.
+# E.g., "if throughput drops below 428 Mbps" means throughput should be maintained
+# at_least 428 Mbps — the "below 428" is the trigger condition, not the target.
+TRIGGER_THRESHOLD_PATTERN = re.compile(
+    r"\b(?:if|when|upon|whenever).{0,100}?\b(?:drops?\s*(?:below|under)|falls?\s*(?:below|under)|"
+    r"falls?\s*short\s*of|dips?\s*(?:below|under)|goes?\s*(?:below|under)|"
+    r"exceeds?|breach(?:es)?|violat(?:es?|ion))\b",
+    re.IGNORECASE,
+)
 
 ICM_URI = "http://www.models.tmforum.org/tio/v1.0.0/IntentCommonModel#"
 MET_URI = "http://www.sdo2.org/TelecomMetrics/Version_1.0#"
@@ -107,7 +117,6 @@ def _extract_metric_context(text: str, metric_key: str) -> str:
 
 
 def infer_operator(text: str, metric_key: str, scenario_family: str) -> str:
-    lowered = text.lower()
     if metric_key == "reporting_interval_seconds":
         return "periodic_every"
     if metric_key == "reaction_time_ms":
@@ -116,8 +125,29 @@ def infer_operator(text: str, metric_key: str, scenario_family: str) -> str:
     # Extract text local to this metric to avoid cross-metric operator contamination
     local_text = _extract_metric_context(text, metric_key)
 
+    # Detect trigger-threshold language: "if throughput drops below 428 Mbps" means
+    # the target is at_least 428 (428 is the floor, not a cap).
+    # The TRIGGER_THRESHOLD_PATTERN matches the full text; we only invert if this
+    # metric's alias appears in the trigger clause.
+    is_trigger_threshold = False
+    if TRIGGER_THRESHOLD_PATTERN.search(text):
+        spec = METRIC_SPECS.get(metric_key)
+        if spec:
+            for alias in spec["aliases"]:
+                if re.search(rf"\b{re.escape(alias)}\b", text, re.IGNORECASE):
+                    is_trigger_threshold = True
+                    break
+
     if OPERATOR_PATTERN_MAP["exactly"].search(local_text) and metric_key in {"device_count", "delivery_ratio_percent"}:
         return "exactly"
+
+    # For trigger-threshold language, invert the operator
+    if is_trigger_threshold and metric_key not in {"reaction_time_ms", "reporting_interval_seconds"}:
+        if OPERATOR_PATTERN_MAP["at_most"].search(local_text):
+            return "at_least"  # "drops below X" → target is at_least X
+        if OPERATOR_PATTERN_MAP["at_least"].search(local_text):
+            return "at_most"  # "exceeds X" → target is at_most X
+
     if OPERATOR_PATTERN_MAP["at_most"].search(local_text):
         return "at_most"
     if OPERATOR_PATTERN_MAP["at_least"].search(local_text):

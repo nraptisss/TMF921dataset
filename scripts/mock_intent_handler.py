@@ -2,8 +2,12 @@
 """
 Mock Intent Handler for TMF921 Intents
 
+DEMO SCRIPT — NOT PART OF THE GENERATION PIPELINE.
+
 This script demonstrates how parsed TMF921 intents could be translated
 into simulated network actions in an intent-based networking system.
+It loads examples from the published dataset and shows a mock execution
+flow. It is not used by the dataset generator, verifier, or benchmark suite.
 """
 
 import json
@@ -217,7 +221,7 @@ def demo_intent_handling(dataset_limit: int = 5):
         print()
 
 
-def validate_and_handle(dataset_path: str = None, limit: int = 50):
+def validate_and_handle(dataset_path: str | None = None, limit: int = 50):
     """
     Validate intents from a dataset and demonstrate handling.
     

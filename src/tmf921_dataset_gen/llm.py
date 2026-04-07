@@ -4,7 +4,7 @@ import importlib.util
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 import requests
 from openai import OpenAI
@@ -46,7 +46,7 @@ class LocalTransformersEngine:
     _model_cache: ClassVar[dict[str, Any]] = {}
     _tokenizer_cache: ClassVar[dict[str, Any]] = {}
 
-    def _dtype(self):
+    def _dtype(self) -> Any:
         import torch
 
         mapping = {
@@ -57,7 +57,7 @@ class LocalTransformersEngine:
         }
         return mapping.get(self.settings.local_dtype.lower(), torch.bfloat16)
 
-    def _load_components(self, model_ref: str):
+    def _load_components(self, model_ref: str) -> tuple[Any, Any]:
         global _TRANSFORMERS_LOADED, AutoModelForCausalLM, AutoTokenizer
         if not _TRANSFORMERS_LOADED:
             from transformers import AutoModelForCausalLM as _AutoModelForCausalLM, AutoTokenizer as _AutoTokenizer
@@ -139,11 +139,8 @@ class LocalTransformersEngine:
 @dataclass(slots=True)
 class LLMRouter:
     settings: Settings
-    _local_engine: Optional[LocalTransformersEngine] = field(init=False, repr=False, default=None)
-    _openai_client: Optional[Any] = field(init=False, repr=False, default=None)
-
-    def __post_init__(self) -> None:
-        pass
+    _local_engine: LocalTransformersEngine | None = field(init=False, repr=False, default=None)
+    _openai_client: Any | None = field(init=False, repr=False, default=None)
 
     def supports_generation(self) -> bool:
         return self.settings.inference_backend != "mock"
