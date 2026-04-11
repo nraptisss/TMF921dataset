@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import logging
 import random
+import re
 from typing import Any
 
 from ..config import Settings
 from ..ingestion.seed_loader import load_seed_records
 from ..llm import LLMRouter
+from ..validation.semantic_frame import METRIC_SPECS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +68,51 @@ class DiversityAgent:
                 return seed
         return self.seeds[0]
 
+    def _extract_kpis_from_context(self, retrieved_context: list[dict[str, Any]], taxonomy_target: dict[str, Any], rng: random.Random) -> dict[str, Any]:
+        """Try to extract actual KPI values from the retrieved corpus to ensure grounding.
+        If no value is found for a required metric, fall back to random sampling.
+        """
+        extracted_kpis = {}
+        traffic = taxonomy_target["traffic_profile"]
+        scenario = taxonomy_target["scenario_family"]
+        
+        required_metrics = []
+        if traffic == "urllc":
+            required_metrics.extend(["latency_ms", "reliability_percent"])
+        elif traffic == "embb":
+            required_metrics.extend(["throughput_mbps", "reliability_percent"])
+        else:
+            required_metrics.extend(["device_count", "delivery_ratio_percent"])
+        
+        if scenario == "energy": required_metrics.append("energy_kwh")
+        if scenario == "reporting": required_metrics.append("reporting_interval_seconds")
+        if scenario == "predictive_assurance": required_metrics.append("reaction_time_ms")
+        if scenario == "closed_loop_autonomy": required_metrics.append("reaction_time_ms")
+
+        full_text = " ".join([row["text"] for row in retrieved_context]).lower()
+        
+        for metric in required_metrics:
+            spec = METRIC_SPECS.get(metric)
+            if not spec: continue
+            
+            for alias in spec["aliases"]:
+                pattern = rf"{re.escape(alias.lower())}.*?(\d+(?:\.\d+)?)"
+                match = re.search(pattern, full_text)
+                if match:
+                    val = float(match.group(1))
+                    extracted_kpis[metric] = int(val) if val.is_integer() else val
+                    break
+        
+        if len(extracted_kpis) < len(required_metrics):
+            sampled = self._sample_kpis(taxonomy_target, rng)
+            for m in required_metrics:
+                if m not in extracted_kpis:
+                    extracted_kpis[m] = sampled.get(m)
+                    
+        return extracted_kpis
+
     def _sample_kpis(self, taxonomy_target: dict[str, Any], rng: random.Random) -> dict[str, Any]:
+
         traffic = taxonomy_target["traffic_profile"]
         scenario = taxonomy_target["scenario_family"]
         if traffic == "urllc":
@@ -201,15 +247,40 @@ class DiversityAgent:
 
         return nl_intent
 
-    def _llm_rewrite(self, baseline_intent: str, taxonomy_target: dict[str, Any], seed: dict[str, Any], kpis: dict[str, Any]) -> str:
+    def _llm_rewrite(
+        self, 
+        baseline_intent: str, 
+        taxonomy_target: dict[str, Any], 
+        seed: dict[str, Any], 
+        kpis: dict[str, Any],
+        retrieved_context: list[dict[str, Any]] | None = None
+    ) -> str:
         if not self.settings.enable_llm_rewrite or not self.router.supports_generation():
             return baseline_intent
+        
+        context_str = ""
+        grounding_instruction = "Rewrite the baseline request into a more natural production-style operator request."
+        
+        if retrieved_context:
+            context_texts = [row["text"] for row in retrieved_context]
+            context_str = "\n".join([f"- {t}" for t in context_texts])
+            grounding_instruction = (
+                "Rewrite the baseline request into a more natural production-style operator request. "
+                "CRITICAL: You MUST ground the intent in the provided 'Domain Evidence'. "
+                "If the evidence contains a more specific terminology or a slightly different value "
+                "that matches the KPI, use the evidence's version. Do NOT hallucinate values "
+                "that are not supported by the evidence."
+            )
+
         prompt = f"""
 You are generating a realistic 6G telecom natural-language intent for synthetic data.
 Preserve every numeric KPI, unit, and hard constraint exactly.
-Rewrite the baseline request into a more natural production-style operator request.
+{grounding_instruction}
+
+CRITICAL CONSTRAINT: Do NOT introduce any new technical requirements, KPIs, or constraints that are not explicitly listed in the KPI payload. If a requirement is not in the payload, it must not appear in the natural language intent.
+
 Return JSON only with this shape:
-{{"nl_intent": "..."}}
+{{ "nl_intent": "..." }}
 
 Taxonomy target:
 {json.dumps(taxonomy_target, indent=2)}
@@ -225,6 +296,7 @@ KPI payload:
 
 Baseline intent:
 {baseline_intent}
+{f"\\nDomain Evidence:\\n{context_str}" if context_str else ""}
 """.strip()
         try:
             response = self.router.generate_json(
@@ -240,12 +312,18 @@ Baseline intent:
             LOGGER.debug("LLM rewrite failed, using baseline: %s", exc)
         return baseline_intent
 
-    def generate(self, taxonomy_target: dict[str, Any], sample_index: int) -> dict[str, Any]:
+    def generate(self, taxonomy_target: dict[str, Any], sample_index: int, retrieved_context: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         rng = random.Random(self.settings.random_seed + sample_index)
         seed = self._matching_seed(taxonomy_target["scenario_family"])
-        kpis = self._sample_kpis(taxonomy_target, rng)
+        
+        # GROUNDING-FIRST: Try to extract KPIs from context first, then fall back to sampling
+        if retrieved_context:
+            kpis = self._extract_kpis_from_context(retrieved_context, taxonomy_target, rng)
+        else:
+            kpis = self._sample_kpis(taxonomy_target, rng)
+            
         baseline_intent = self._render_nl(taxonomy_target, kpis, rng)
-        nl_intent = self._llm_rewrite(baseline_intent, taxonomy_target, seed, kpis)
+        nl_intent = self._llm_rewrite(baseline_intent, taxonomy_target, seed, kpis, retrieved_context)
         return {
             "nl_intent": nl_intent,
             "seed_ids": [seed["id"]],

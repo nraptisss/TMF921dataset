@@ -37,7 +37,12 @@ class WorkflowRunner:
 
         def diversify_node(state: GraphState) -> GraphState:
             sample_index = state["taxonomy_target"].get("sample_index", 0)
-            candidate = self.diversity.generate(state["taxonomy_target"], sample_index)
+            # GROUNDING-FIRST: Generate intent using retrieved context for immediate grounding
+            candidate = self.diversity.generate(
+                state["taxonomy_target"], 
+                sample_index, 
+                retrieved_context=state.get("retrieved_context")
+            )
             return {
                 **state,
                 "nl_intent": candidate["nl_intent"],
@@ -50,7 +55,10 @@ class WorkflowRunner:
             if self.retriever is None:
                 context = []
             else:
-                context = self.retriever.retrieve(state["nl_intent"], top_k=8, per_source=1)
+                # Use taxonomy target to build a retrieval query instead of NL intent
+                target = state["taxonomy_target"]
+                query = f"{target['layer']} {target['traffic_profile']} {target['scenario_family']} {target.get('domain_context', '')}".strip()
+                context = self.retriever.retrieve(query, top_k=8, per_source=1)
             return {**state, "retrieved_context": context}
 
         def translate_node(state: GraphState) -> GraphState:
@@ -127,9 +135,9 @@ class WorkflowRunner:
         workflow.add_node("translate", translate_node)
         workflow.add_node("critique", critique_node)
         workflow.add_node("refine", refine_node)
-        workflow.add_edge(START, "diversify")
-        workflow.add_edge("diversify", "retrieve")
-        workflow.add_edge("retrieve", "translate")
+        workflow.add_edge(START, "retrieve")
+        workflow.add_edge("retrieve", "diversify")
+        workflow.add_edge("diversify", "translate")
         workflow.add_edge("translate", "critique")
         workflow.add_conditional_edges(
             "critique",
