@@ -141,6 +141,11 @@ def infer_operator(text: str, metric_key: str, scenario_family: str) -> str:
     if OPERATOR_PATTERN_MAP["exactly"].search(local_text) and metric_key in {"device_count", "delivery_ratio_percent"}:
         return "exactly"
 
+    if "ceiling" in local_text or "cap" in local_text:
+        return "at_most"
+    if "floor" in local_text:
+        return "at_least"
+
     # For trigger-threshold language, invert the operator
     if is_trigger_threshold and metric_key not in {"reaction_time_ms", "reporting_interval_seconds"}:
         if OPERATOR_PATTERN_MAP["at_most"].search(local_text):
@@ -149,6 +154,8 @@ def infer_operator(text: str, metric_key: str, scenario_family: str) -> str:
             return "at_most"  # "exceeds X" → target is at_most X
 
     if OPERATOR_PATTERN_MAP["at_most"].search(local_text):
+        if metric_key in {"reliability_percent", "availability_percent"}:
+            return "at_least"
         return "at_most"
     if OPERATOR_PATTERN_MAP["at_least"].search(local_text):
         return "at_least"
@@ -183,14 +190,20 @@ def build_intent_frame(
     from .semantic_score import extract_kpis
 
     extracted = extract_kpis(nl_intent)
-    merged = dict(source_kpis or {})
-    merged.update(extracted)
+    authoritative = {
+        key: value
+        for key, value in (source_kpis or {}).items()
+        if key in METRIC_SPECS
+    }
+    merged = dict(authoritative)
+    for key, value in extracted.items():
+        if key in METRIC_SPECS and key not in merged:
+            merged[key] = value
     constraints: list[dict[str, Any]] = []
     for metric_key, value in merged.items():
-        if metric_key not in METRIC_SPECS:
-            continue
         operator = infer_operator(nl_intent, metric_key, taxonomy_target["scenario_family"])
-        constraints.append(_constraint_record(metric_key, value, operator, "nl_intent" if metric_key in extracted else "sampled"))
+        source = "source_kpis" if metric_key in authoritative else "nl_intent"
+        constraints.append(_constraint_record(metric_key, value, operator, source))
 
     scenario_family = taxonomy_target["scenario_family"]
     event_required = scenario_family in {"predictive_assurance", "closed_loop_autonomy"}
@@ -324,7 +337,8 @@ def _parse_metric_value(metric_key: str, raw_value: Any) -> Any:
     text = str(raw_value).strip('"')
     numeric = re.search(r"(\d+(?:\.\d+)?)", text)
     if metric_key == "device_count":
-        return int(numeric.group(1)) if numeric else text
+        number = float(numeric.group(1)) if numeric else None
+        return int(number) if number and number.is_integer() else number if number else text
     if numeric:
         number = float(numeric.group(1))
         return int(number) if number.is_integer() else number
@@ -337,10 +351,13 @@ def attribute_evidence(
     grounding_mode: str,
     similarity_threshold: float,
 ) -> dict[str, Any]:
+    from .semantic_score import extract_kpis
+
     evidence_map: dict[str, list[str]] = {}
+    evidence_detail: dict[str, str] = {}
     supported_claims = 0
     unsupported_claims = 0
-    allowed_sources = {"seed", "oas_example", "oas_schema", "tr290_docx", "tr290_pdf", "tr290_markdown", "idan_reference"}
+    grounding_sources = {"seed", "tr290_docx", "tr290_pdf", "tr290_markdown", "idan_reference"}
     claims: list[tuple[str, str]] = []
     for constraint in intent_frame.get("constraints", []):
         claims.append((constraint["metric"], _value_to_string(constraint["value"])))
@@ -352,7 +369,7 @@ def attribute_evidence(
         claim_tokens = {token for token in _normalize_text(claim_value).split() if token}
         for row in retrieved_context:
             source_type = row.get("metadata", {}).get("source_type")
-            if source_type not in allowed_sources:
+            if source_type not in grounding_sources:
                 continue
             similarity = max(0.0, 1.0 - float(row.get("distance", 1.0)))
             row_text = row.get("text", "")
@@ -362,27 +379,40 @@ def attribute_evidence(
             if claim_key == "domain_context":
                 if claim_tokens and claim_tokens.issubset(set(row_norm.split())):
                     matches.append(row["id"])
+                    evidence_detail[claim_key] = "direct_context"
             elif claim_key == "scenario_family":
                 scenario_tokens = SCENARIO_KEYWORDS.get(claim_value, set())
                 if scenario_tokens and any(token in row_norm for token in scenario_tokens):
                     matches.append(row["id"])
+                    evidence_detail[claim_key] = "scenario_keyword"
             else:
-                if claim_value in row_text or claim_value in row_norm:
-                    matches.append(row["id"])
+                row_kpis = extract_kpis(row_text)
+                if claim_key in row_kpis:
+                    row_value = row_kpis[claim_key]
+                    expected = _parse_metric_value(claim_key, claim_value)
+                    if _parse_metric_value(claim_key, row_value) == expected:
+                        matches.append(row["id"])
+                        evidence_detail[claim_key] = "metric_value_match"
         evidence_map[claim_key] = matches
         if matches:
             supported_claims += 1
         else:
             unsupported_claims += 1
+            evidence_detail.setdefault(claim_key, "unsupported")
 
     total_claims = max(1, len(claims))
     supported_ratio = supported_claims / total_claims
     grounding_pass = grounding_mode != "grounded_corpus" or unsupported_claims == 0
+    notes = []
+    if grounding_mode == "grounded_corpus" and unsupported_claims:
+        notes.append(f"unsupported grounded claims: {unsupported_claims}")
     return {
         "evidence_map": evidence_map,
+        "evidence_detail": evidence_detail,
         "supported_claim_ratio": round(supported_ratio, 4),
         "unsupported_claim_count": unsupported_claims,
         "grounding_pass": grounding_pass,
+        "notes": notes,
     }
 
 
@@ -404,7 +434,12 @@ def verify_semantic_alignment(
         if actual is None:
             missing_metrics.append(metric_key)
             continue
-        if actual["operator"] != expected["operator"]:
+        # Check for operator equivalence (e.g., at_most ≈ trigger_within for reaction times)
+        operator_equivalents = {
+            "at_most": {"trigger_within"},  # at_most can represent upper bounds for triggers
+            "trigger_within": {"at_most"},
+        }
+        if actual["operator"] != expected["operator"] and expected["operator"] not in operator_equivalents.get(actual["operator"], set()):
             operator_mismatches.append(metric_key)
         if _parse_metric_value(metric_key, actual["value"]) != _parse_metric_value(metric_key, expected["value"]):
             value_mismatches.append(metric_key)
@@ -414,9 +449,12 @@ def verify_semantic_alignment(
     # Only check name for contradictory scenarios — the context field contains
     # structured operator names (trigger_within, at_most, etc.) that can false-positive
     # against scenario keywords.
+    context_terms = set(_normalize_text(intent_frame.get("domain_context", "")).split())
+    scenario_terms = set(_normalize_text(scenario).split())
+    excluded_terms = context_terms | scenario_terms
     contradictory_scenarios = {
         other for other, keywords in SCENARIO_KEYWORDS.items()
-        if other != scenario and any(keyword in payload_name for keyword in keywords)
+        if other != scenario and any(keyword in payload_name and keyword not in excluded_terms for keyword in keywords)
     }
     if contradictory_scenarios:
         contradictions.extend([f"contradictory scenario token: {item}" for item in sorted(contradictory_scenarios)])

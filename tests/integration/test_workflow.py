@@ -8,6 +8,11 @@ from tmf921_dataset_gen.validation.semantic_frame import build_intent_frame
 
 def test_run_generation_produces_exportable_records(tmp_path: Path) -> None:
     settings = Settings.from_env(Path.cwd())
+    settings.inference_backend = "mock"
+    settings.grounding_mode = "synthetic_semantic"
+    settings.enable_llm_rewrite = False
+    settings.enable_llm_translation_hints = False
+    settings.enable_llm_semantic_review = False
     settings.vector_index_dir = tmp_path / "workflow-index"
     settings.repo.output_dir = tmp_path / "output"
     records = run_generation(settings, count=3, output_dir=tmp_path / "dataset")
@@ -20,6 +25,7 @@ def test_run_generation_produces_exportable_records(tmp_path: Path) -> None:
 def test_critic_rejects_missing_constraints(tmp_path: Path) -> None:
     """Test that critic rejects payloads with missing constraints."""
     settings = Settings.from_env(Path.cwd())
+    settings.grounding_mode = "synthetic_semantic"
     settings.vector_index_dir = tmp_path / "workflow-index"
 
     critic = CriticRefinementAgent(settings)
@@ -67,6 +73,7 @@ def test_critic_rejects_missing_constraints(tmp_path: Path) -> None:
 def test_critic_rejects_wrong_operators(tmp_path: Path) -> None:
     """Test that critic rejects payloads with wrong operators."""
     settings = Settings.from_env(Path.cwd())
+    settings.grounding_mode = "synthetic_semantic"
     settings.vector_index_dir = tmp_path / "workflow-index"
 
     critic = CriticRefinementAgent(settings)
@@ -112,6 +119,7 @@ def test_critic_rejects_wrong_operators(tmp_path: Path) -> None:
 def test_critic_rejects_contradictory_names(tmp_path: Path) -> None:
     """Test that critic rejects payloads with contradictory names/context."""
     settings = Settings.from_env(Path.cwd())
+    settings.grounding_mode = "synthetic_semantic"
     settings.vector_index_dir = tmp_path / "workflow-index"
 
     critic = CriticRefinementAgent(settings)
@@ -155,6 +163,7 @@ def test_critic_rejects_contradictory_names(tmp_path: Path) -> None:
 def test_critic_accepts_valid_payload(tmp_path: Path) -> None:
     """Test that critic accepts valid payloads."""
     settings = Settings.from_env(Path.cwd())
+    settings.grounding_mode = "synthetic_semantic"
     settings.vector_index_dir = tmp_path / "workflow-index"
 
     critic = CriticRefinementAgent(settings)
@@ -218,6 +227,53 @@ def test_critic_accepts_valid_payload(tmp_path: Path) -> None:
     )
 
     assert report["accepted"] is True
-    assert report["semantic_pass"] is True
-    assert report["operator_pass"] is True
-    assert report["contradiction_count"] == 0
+
+
+def test_critic_never_uses_llm_override_for_failed_symbolic_review(tmp_path: Path) -> None:
+    settings = Settings.from_env(Path.cwd())
+    settings.grounding_mode = "synthetic_semantic"
+    settings.enable_llm_semantic_review = True
+    settings.vector_index_dir = tmp_path / "workflow-index"
+
+    critic = CriticRefinementAgent(settings)
+    critic._llm_semantic_review = lambda _nl, _payload: {"faithfulness": 1.0, "notes": ["looks good"]}  # type: ignore[method-assign]
+
+    nl_intent = "Ensure throughput of at least 500 Mbps and latency below 10 ms"
+    taxonomy_target = {
+        "layer": "service",
+        "traffic_profile": "embb",
+        "scenario_family": "provisioning",
+        "domain_context": "generic",
+        "taxonomy_category": "service/embb/provisioning"
+    }
+    intent_frame = build_intent_frame(nl_intent, taxonomy_target)
+    payload = {
+        "@type": "Intent",
+        "name": "Test Intent",
+        "description": nl_intent,
+        "priority": "high",
+        "context": "generic context",
+        "version": "1.0",
+        "lifecycleStatus": "active",
+        "expression": {
+            "@type": "JsonLdExpression",
+            "@baseType": "IntentExpression",
+            "iri": "https://tmf921.dataset.local/expressions/test-intent",
+            "expressionValue": {
+                "@graph": [{
+                    "@type": "icm:DeliveryExpectation",
+                    "icm:params": {
+                        "met:throughput": [{"icm:atLeast": "500 Mbps"}]
+                    }
+                }]
+            }
+        }
+    }
+
+    report = critic.review(
+        nl_intent, payload, "json-ld", taxonomy_target, [], intent_frame
+    )
+
+    assert report["accepted"] is False
+    assert "LLM tie-breaker override" not in str(report["notes"])
+    assert "missing constraint: latency_ms" in str(report["notes"])

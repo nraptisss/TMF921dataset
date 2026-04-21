@@ -1,3 +1,26 @@
+Metadata-Version: 2.4
+Name: tmf921-dataset-gen
+Version: 0.1.0
+Summary: Synthetic NL intent to TMF921 v5.0 dataset generator
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.8
+Requires-Dist: jsonschema>=4.23
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: langgraph>=0.2
+Requires-Dist: chromadb>=0.5
+Requires-Dist: sentence-transformers>=3.0
+Requires-Dist: scikit-learn>=1.5
+Requires-Dist: rdflib>=7.0
+Requires-Dist: python-docx>=1.1
+Requires-Dist: pdfplumber>=0.11
+Requires-Dist: openai>=1.40
+Requires-Dist: transformers>=4.45
+Requires-Dist: streamlit>=1.38
+Requires-Dist: requests>=2.32
+Requires-Dist: datasets>=2.21
+Requires-Dist: python-dotenv>=1.0
+
 # TMF921 Dataset Generator
 
 Synthetic, production-oriented pipeline for generating natural-language intents paired with TMF921 v5.0 `Intent_FVO` payloads.
@@ -12,7 +35,6 @@ Synthetic, production-oriented pipeline for generating natural-language intents 
 - Docs index: `docs/README.md`
 - Methodology: `docs/methodology.md`
 - Original plan baseline: `docs/plan.md`
-- System Architecture: `SYSTEM_ARCHITECTURE.md`
 - Upgrade plan: `docs/codex_upgrade_plan.md`
 - Issue reports: `docs/verified_issues_report.md`
 - Upgrade plan: `docs/codex_upgrade_plan.md`

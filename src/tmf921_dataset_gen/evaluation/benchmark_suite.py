@@ -138,98 +138,65 @@ class BenchmarkSuite:
     def run_semantic_preservation_test(self, evaluation_cases: list[dict[str, Any]], dataset_records: list[dict[str, Any]]) -> dict[str, Any]:
         """Test semantic preservation against gold evaluation set.
 
-        Uses fuzzy NL intent matching (keyword/structure overlap) rather than
-        exact string equality, since the dataset is synthetically generated
-        and won't contain verbatim copies of hand-authored evaluation cases.
-
-        Checks that the matched record has the same constraint metrics with
-        compatible operators (allowing for default operator inference when
-        the NL text doesn't explicitly state an operator).
+        Match candidates by current taxonomy fields and metric overlap first,
+        then validate exact constraint/operator preservation.
         """
-        import re
 
         total = len(evaluation_cases)
         passed = 0
         failures = []
 
-        def _normalize_for_matching(text: str) -> str:
-            """Normalize text for fuzzy matching: lowercase, remove extra whitespace."""
-            return re.sub(r'\s+', ' ', text.lower().strip())
-
-        def _extract_semantic_signature(text: str) -> set[str]:
-            """Extract a semantic signature: key tokens that define the intent."""
-            normalized = _normalize_for_matching(text)
-            tokens = set()
-            for profile in ['embb', 'urllc', 'mmtc']:
-                if profile in normalized:
-                    tokens.add(f'traffic:{profile}')
-            for scenario in ['energy', 'slicing', 'reporting', 'multi-domain', 'conflict', 'resilience', 'autonomy', 'assurance', 'provisioning', 'monitoring', 'failover', 'degradation']:
-                if scenario in normalized:
-                    tokens.add(f'scenario:{scenario}')
-            for metric in ['latency', 'throughput', 'reliability', 'energy', 'device', 'delivery ratio', 'reaction time', 'reporting interval']:
-                if metric in normalized:
-                    tokens.add(f'metric:{metric}')
-            for op, pattern in [('at_least', r'at\s+least|minimum|no\s+less\s+than|exceeds?|greater\s+than'),
-                                ('at_most', r'at\s+most|under|below|less\s+than|no\s+more\s+than'),
-                                ('exactly', r'exactly|strictly|equal\s+to'),
-                                ('within', r'within'),
-                                ('periodic', r'every|interval')]:
-                if re.search(pattern, normalized):
-                    tokens.add(f'op:{op}')
-            return tokens
-
-        # Compatible operator pairs: (gold_op, actual_op) where actual is acceptable
-        COMPATIBLE_OPS = {
-            ('at_most', 'at_most'),
-            ('at_least', 'at_least'),
-            ('exactly', 'exactly'),
-            ('within', 'within'),
-            ('within', 'trigger_within'),
-            ('trigger_within', 'trigger_within'),
-            ('periodic_every', 'periodic_every'),
-        }
-
         for gold_case in evaluation_cases:
             gold_nl = gold_case["nl_intent"]
-            gold_sig = _extract_semantic_signature(gold_nl)
+            gold_frame = gold_case["gold_intent_frame"]
+            gold_metrics = {constraint["metric"] for constraint in gold_frame.get("constraints", [])}
 
-            # Find best matching record by semantic signature overlap
             best_match = None
-            best_overlap = 0.0
+            best_score = -1.0
 
             for record in dataset_records:
-                record_nl = record["nl_intent"]
-                record_sig = _extract_semantic_signature(record_nl)
-
-                if not record_sig or not gold_sig:
+                actual_frame = record.get("metadata", {}).get("intent_frame")
+                if not actual_frame:
                     continue
-
-                overlap = len(gold_sig & record_sig) / len(gold_sig | record_sig)
-                if overlap > best_overlap:
-                    best_overlap = overlap
+                actual_metrics = {constraint["metric"] for constraint in actual_frame.get("constraints", [])}
+                score = 0.0
+                if actual_frame.get("traffic_profile") == gold_frame.get("traffic_profile"):
+                    score += 2.0
+                if actual_frame.get("scenario_family") == gold_frame.get("scenario_family"):
+                    score += 2.0
+                if actual_frame.get("layer") == gold_frame.get("layer"):
+                    score += 1.0
+                metric_union = gold_metrics | actual_metrics
+                if metric_union:
+                    score += len(gold_metrics & actual_metrics) / len(metric_union)
+                if actual_frame.get("domain_context") == gold_frame.get("domain_context"):
+                    score += 0.5
+                if score > best_score:
+                    best_score = score
                     best_match = record
 
-            if best_match is None or best_overlap < 0.15:
+            if best_match is None or best_score < 3.0:
                 failures.append({
                     "nl_intent": gold_nl[:100] + "...",
                     "reason": "no matching record found in dataset",
-                    "gold_signature": sorted(gold_sig),
+                    "gold_target": {
+                        "layer": gold_frame.get("layer"),
+                        "traffic_profile": gold_frame.get("traffic_profile"),
+                        "scenario_family": gold_frame.get("scenario_family"),
+                    },
                 })
                 continue
 
-            # Compare against gold standard
-            gold_frame = gold_case["gold_intent_frame"]
             actual_frame = best_match.get("metadata", {}).get("intent_frame")
 
             if not actual_frame:
                 failures.append({
                     "nl_intent": gold_nl[:100] + "...",
                     "reason": "matched record missing intent_frame",
-                    "match_overlap": round(best_overlap, 3),
+                    "match_score": round(best_score, 3),
                 })
                 continue
 
-            # Check constraint alignment: metrics must be present, operators must be compatible
             gold_constraints = {c["metric"]: c for c in gold_frame.get("constraints", [])}
             actual_constraints = {c["metric"]: c for c in actual_frame.get("constraints", [])}
 
@@ -239,9 +206,7 @@ class BenchmarkSuite:
                 if not actual_c:
                     constraint_match = False
                     break
-                # Check operator compatibility
-                op_pair = (gold_c["operator"], actual_c["operator"])
-                if op_pair not in COMPATIBLE_OPS:
+                if gold_c["operator"] != actual_c["operator"]:
                     constraint_match = False
                     break
 
@@ -252,7 +217,7 @@ class BenchmarkSuite:
                     "nl_intent": gold_nl[:100] + "...",
                     "gold_constraints": {m: c["operator"] for m, c in gold_constraints.items()},
                     "actual_constraints": {m: c["operator"] for m, c in actual_constraints.items()},
-                    "match_overlap": round(best_overlap, 3),
+                    "match_score": round(best_score, 3),
                 })
 
         return {

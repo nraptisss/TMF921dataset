@@ -1,11 +1,31 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from ..config import Settings
 from ..evaluation.benchmark_suite import BenchmarkSuite
 from ..models.dataset import DatasetRecord
 from ..validation.diversity_metrics import calculate_diversity_score, detect_bias
+
+
+def _normalized_nl(text: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]+", " ", text.lower())).strip()
+
+
+def _combination_coverage(records: list[DatasetRecord]) -> float:
+    if not records:
+        return 0.0
+    combos = {
+        (
+            record.metadata.taxonomy_target.get("layer"),
+            record.metadata.taxonomy_target.get("traffic_profile"),
+            record.metadata.taxonomy_target.get("scenario_family"),
+            record.metadata.taxonomy_target.get("domain_context"),
+        )
+        for record in records
+    }
+    return len(combos) / 288
 
 
 def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_path: Path | None, jsonl_path: Path) -> dict:
@@ -20,12 +40,18 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
     avg_supported_claim_ratio = sum(record.metadata.supported_claim_ratio for record in records) / len(records) if records else 0
     semantic_pass_rate = sum(1 for record in records if record.metadata.semantic_pass) / len(records) if records else 0
     operator_pass_rate = sum(1 for record in records if record.metadata.operator_pass) / len(records) if records else 0
+    coverage_ratio = _combination_coverage(records)
     # Track both the ratio of records with unsupported claims AND the average count
     records_with_unsupported = sum(1 for record in records if record.metadata.unsupported_claim_count > 0)
     unsupported_claims_ratio = records_with_unsupported / max(1, len(records)) if records else 0.0
     avg_unsupported_claims = (
         sum(record.metadata.unsupported_claim_count for record in records) / max(1, len(records))
         if records else 0.0
+    )
+    normalized_nl_values = [_normalized_nl(record.nl_intent) for record in records]
+    normalized_nl_duplicate_ratio = (
+        1.0 - (len(set(normalized_nl_values)) / len(normalized_nl_values))
+        if normalized_nl_values else 0.0
     )
 
     effective_embedding_model = settings.effective_embedding_model or settings.embedding_model
@@ -51,9 +77,11 @@ def build_manifest(settings: Settings, records: list[DatasetRecord], hf_dataset_
             "diversity_score": round(diversity_score, 4),
             "semantic_pass_rate": round(semantic_pass_rate, 4),
             "operator_pass_rate": round(operator_pass_rate, 4),
+            "combination_coverage_ratio": round(coverage_ratio, 4),
             "average_supported_claim_ratio": round(avg_supported_claim_ratio, 4),
             "unsupported_claims_ratio": round(unsupported_claims_ratio, 4),
             "avg_unsupported_claims_per_record": round(avg_unsupported_claims, 4),
+            "normalized_nl_duplicate_ratio": round(normalized_nl_duplicate_ratio, 4),
             "bias_report": bias_report,
         },
         "grounding_mode": settings.grounding_mode,
@@ -68,6 +96,7 @@ def build_release_audit(settings: Settings, records: list[DatasetRecord]) -> dic
     total = len(records)
     semantic_pass_rate = sum(1 for record in records if record.metadata.semantic_pass) / total if total else 0.0
     supported_claim_ratio = sum(record.metadata.supported_claim_ratio for record in records) / total if total else 0.0
+    coverage_ratio = _combination_coverage(records)
     # Track both the ratio of records with unsupported claims AND the average count
     records_with_unsupported = sum(1 for record in records if record.metadata.unsupported_claim_count > 0)
     unsupported_claims_ratio = records_with_unsupported / max(1, total) if total else 0.0
@@ -77,7 +106,12 @@ def build_release_audit(settings: Settings, records: list[DatasetRecord]) -> dic
     )
     payloads = [record.model_dump(mode="json") for record in records]
     diversity_score = calculate_diversity_score(payloads)
-    duplicate_ratio = max(0.0, 1.0 - diversity_score)
+    duplicate_ratio = max(0.0, 1.0 - diversity_score) if total > 0 else 0.0
+    normalized_nl_values = [_normalized_nl(record.nl_intent) for record in records]
+    normalized_nl_duplicate_ratio = (
+        1.0 - (len(set(normalized_nl_values)) / len(normalized_nl_values))
+        if normalized_nl_values else 0.0
+    )
 
     # Run benchmark suite
     benchmark_suite = BenchmarkSuite(settings)
@@ -115,6 +149,16 @@ def build_release_audit(settings: Settings, records: list[DatasetRecord]) -> dic
             "threshold": 0.95,  # Configurable threshold
             "pass": benchmark_results["semantic_preservation"]["rate"] >= 0.95,
         },
+        "combination_coverage_ratio": {
+            "actual": round(coverage_ratio, 4),
+            "threshold": 0.75,
+            "pass": coverage_ratio >= 0.75,
+        },
+        "normalized_nl_duplicate_ratio": {
+            "actual": round(normalized_nl_duplicate_ratio, 4),
+            "threshold": 0.1,
+            "pass": normalized_nl_duplicate_ratio <= 0.1,
+        },
     }
     auto_pass = all(check["pass"] for check in automatic_checks.values())
     manual_review = {
@@ -140,5 +184,6 @@ def build_release_audit(settings: Settings, records: list[DatasetRecord]) -> dic
         "notes": [
             "Release remains blocked until manual review is completed." if settings.require_manual_review_for_release else "Automatic gates satisfied.",
             f"Benchmark suite executed with {len(benchmark_results)} tests.",
+            "Coverage and duplicate checks now enforce release-readiness expectations.",
         ],
     }

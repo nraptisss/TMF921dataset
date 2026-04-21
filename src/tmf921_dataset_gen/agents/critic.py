@@ -7,7 +7,7 @@ from ..llm import LLMRouter
 from ..rag.embeddings import HashingEmbeddingModel, build_embedding_backend
 from ..validation.jsonschema_validator import TMFJsonSchemaValidator
 from ..validation.realism_score import score_realism
-from ..validation.semantic_score import intent_payload_to_text, score_semantic_faithfulness
+from ..validation.semantic_score import intent_payload_to_text, score_semantic_faithfulness, score_kpi_plausibility
 from ..validation.semantic_frame import attribute_evidence, verify_semantic_alignment
 from ..validation.tio_rules import evaluate_tio_compliance
 from .translator import TranslatorAgent
@@ -107,23 +107,22 @@ Payload summary:
 
         # Layer 5: Optional LLM judge as tie-breaker/secondary reviewer
         llm_semantic = self._llm_semantic_review(nl_intent, payload)
+        
+        # Layer 6: KPI Plausibility
+        payload_kpis = {c["metric"]: c["value"] for c in verify_semantic_alignment(nl_intent, intent_frame_safe, payload)["payload_constraints"]}
+        plausibility = score_kpi_plausibility(payload_kpis, priority=payload.get("priority", "high"))
+        plausibility_pass = plausibility["score"] >= 0.8
 
-        # Compute acceptance with symbolic checks as primary rejection mechanism
+        # Compute acceptance with symbolic and plausibility checks as primary rejection mechanisms
         schema_pass = schema_result.valid
         tio_pass = tio["score"] == 1.0
         symbolic_pass = symbolic["semantic_pass"]
         grounding_pass = evidence["grounding_pass"]
+        plausibility_pass = plausibility["score"] >= 0.8
 
-        # Accept only if all layers pass, with symbolic as mandatory
-        accept = schema_pass and tio_pass and symbolic_pass and grounding_pass
-
-        # If borderline (all but one layer passes), use LLM as tie-breaker
-        if not accept and sum([schema_pass, tio_pass, symbolic_pass, grounding_pass]) == 3:
-            if llm_semantic and "faithfulness" in llm_semantic:
-                llm_score = float(llm_semantic["faithfulness"])
-                if llm_score >= 0.9:  # High confidence override
-                    accept = True
-                    symbolic["notes"].append(f"LLM tie-breaker override: {llm_score}")
+        # Accept only if all layers pass. The LLM review is advisory only and
+        # must never rescue symbolic, grounding, or plausibility failures.
+        accept = schema_pass and tio_pass and symbolic_pass and grounding_pass and plausibility_pass
 
         # Legacy quality score for diagnostics (not used for acceptance)
         semantic = score_semantic_faithfulness(nl_intent, payload, self.embedder)  # Recompute for legacy score
@@ -135,7 +134,7 @@ Payload summary:
         quality_score = (0.35 * semantic["score"]) + (0.25 * tio["score"]) + (0.25 * semantic_pass_score) + (0.15 * grounding_score)
 
         # Collect all validation notes
-        notes = [*schema_result.errors, *tio["notes"], *realism["notes"], *symbolic["notes"], *evidence.get("notes", [])]
+        notes = [*schema_result.errors, *tio["notes"], *realism["notes"], *symbolic["notes"], *evidence.get("notes", []), *plausibility["notes"]]
         if llm_semantic.get("notes"):
             notes.extend(llm_semantic["notes"])
 

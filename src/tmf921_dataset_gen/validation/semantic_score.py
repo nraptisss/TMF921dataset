@@ -12,35 +12,71 @@ def _first_float(pattern: str, text: str) -> float | None:
     match = re.search(pattern, text, flags=re.IGNORECASE)
     if not match:
         return None
-    return float(match.group(1))
+    return float(match.group(1).replace(",", ""))
 
 
 def _first_int(pattern: str, text: str) -> int | None:
     match = re.search(pattern, text, flags=re.IGNORECASE)
     if not match:
         return None
-    return int(match.group(1))
+    return int(match.group(1).replace(",", ""))
+
+
+def _parse_number(raw: str) -> float:
+    return float(raw.replace(",", ""))
+
+
+def _parse_int(raw: str) -> int:
+    return int(raw.replace(",", ""))
 
 
 def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
     lowered = text.lower()
     kpis: dict[str, Any] = {}
 
-    latency_ms = _first_float(r"latency[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)", lowered)
-    throughput_gbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:gbps|gigabits?|gb/s)", lowered)
-    throughput_mbps = _first_float(r"throughput[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:mbps|megabits?|mb/s)", lowered)
-    energy_kwh = _first_float(r"energy(?:consumption)?[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:kwh|kilowatt.?hours?)", lowered)
-    reaction_time_ms = _first_float(
-        r"(?:reactiontime|reaction time|corrective action within|failover to backup resources within|trigger .*? within|remediation .*? within|within)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*(?:ms|milliseconds?)",
-        lowered,
-    )
-    device_count = _first_int(
-        r"(\d+)\s+(?:devices?|robots?|sensors?|vehicles|users|people)",
-        lowered,
-    )
-    reliability_percent = _first_float(r"reliability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
-    availability_percent = _first_float(r"availability[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
-    delivery_ratio_percent = _first_float(r"(?:packetdeliveryratio|packet delivery ratio|delivery ratio)[^0-9]{0,40}?(\d+(?:\.\d+)?)\s*%", lowered)
+    # Pattern: (Metric Name) ... (Value) (Unit)  OR  (Value) (Unit) ... (Metric Name)
+    def extract_metric(metric_pattern, value_pattern, unit_pattern):
+        # Case 1: Metric then Value (e.g., "latency of 5 ms")
+        match1 = re.search(rf"{metric_pattern}[^0-9]{{0,40}}?({value_pattern})\s*{unit_pattern}", lowered)
+        if match1:
+            return _parse_number(match1.group(1))
+        # Case 2: Value then Metric (e.g., "5 ms latency")
+        match2 = re.search(rf"({value_pattern})\s*{unit_pattern}[^0-9]{{0,40}}?{metric_pattern}", lowered)
+        if match2:
+            return _parse_number(match2.group(1))
+        return None
+
+    numeric_pattern = r"\d[\d,]*(?:\.\d+)?"
+
+    val = extract_metric(r"latency", numeric_pattern, r"(?:ms|milliseconds?)")
+    if val is not None: kpis["latency_ms"] = val
+
+    val = extract_metric(r"throughput", numeric_pattern, r"(?:gbps|gigabits?|gb/s)")
+    if val is not None: kpis["throughput_gbps"] = val
+
+    val = extract_metric(r"throughput", numeric_pattern, r"(?:mbps|megabits?|mb/s)")
+    if val is not None: kpis["throughput_mbps"] = val
+
+    val = extract_metric(r"energy(?:consumption)?", numeric_pattern, r"(?:kwh|kilowatt.?hours?)")
+    if val is not None: kpis["energy_kwh"] = val
+
+    val = extract_metric(r"(?:reaction\s*time|corrective\s*action|failover|trigger|remediation)", numeric_pattern, r"(?:ms|milliseconds?)")
+    if val is not None: kpis["reaction_time_ms"] = val
+
+    # Device count is slightly different
+    device_match = re.search(r"(\d[\d,]*)\s+(?:devices?|robots?|sensors?|vehicles|users|people)", lowered)
+    if device_match:
+        kpis["device_count"] = _parse_int(device_match.group(1))
+
+    val = extract_metric(r"reliability", numeric_pattern, r"%")
+    if val is not None: kpis["reliability_percent"] = val
+
+    val = extract_metric(r"availability", numeric_pattern, r"%")
+    if val is not None: kpis["availability_percent"] = val
+
+    val = extract_metric(r"(?:packet\s*delivery\s*ratio|delivery\s*ratio)", numeric_pattern, r"%")
+    if val is not None: kpis["delivery_ratio_percent"] = val
+
     report_match = re.search(r"(?:reports? every|reporting interval(?: of)?)\s*(\d+)\s*(seconds?|minutes?)", lowered, flags=re.IGNORECASE)
     if report_match:
         interval_value = int(report_match.group(1))
@@ -51,24 +87,6 @@ def _nlp_kpi_extraction(text: str) -> dict[str, Any]:
         if reporting_interval_seconds is not None:
             kpis["reporting_interval_seconds"] = reporting_interval_seconds
 
-    if latency_ms is not None:
-        kpis["latency_ms"] = latency_ms
-    if throughput_gbps is not None:
-        kpis["throughput_gbps"] = throughput_gbps
-    if throughput_mbps is not None:
-        kpis["throughput_mbps"] = throughput_mbps
-    if energy_kwh is not None:
-        kpis["energy_kwh"] = energy_kwh
-    if reaction_time_ms is not None:
-        kpis["reaction_time_ms"] = reaction_time_ms
-    if device_count is not None:
-        kpis["device_count"] = device_count
-    if reliability_percent is not None:
-        kpis["reliability_percent"] = reliability_percent
-    if availability_percent is not None:
-        kpis["availability_percent"] = availability_percent
-    if delivery_ratio_percent is not None:
-        kpis["delivery_ratio_percent"] = delivery_ratio_percent
     return kpis
 
 
@@ -77,7 +95,34 @@ COUNT_PATTERN = re.compile(r"(\d+)\s*(users|robots|industrial robots|sensors|veh
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
+def score_kpi_plausibility(kpis: dict[str, Any], priority: str = "high") -> dict[str, Any]:
+    """Check if KPI values are realistic for the given priority."""
+    issues = []
+    score = 1.0
+    
+    # Reliability/Availability usually > 90%
+    for m in ["reliability_percent", "availability_percent"]:
+        if m in kpis:
+            val = kpis[m]
+            if val < 90.0:
+                issues.append(f"{m} is unusually low: {val}%")
+                score -= 0.2
+            if priority == "critical" and val < 99.0:
+                issues.append(f"{m} for critical intent should be > 99%: {val}%")
+                score -= 0.2
+                
+    if "latency_ms" in kpis and kpis["latency_ms"] > 1000:
+        issues.append(f"latency_ms is unusually high: {kpis['latency_ms']}ms")
+        score -= 0.2
+        
+    if "device_count" in kpis and kpis["device_count"] <= 0:
+        issues.append(f"device_count must be positive: {kpis['device_count']}")
+        score -= 0.3
+        
+    return {"score": max(0.0, score), "notes": issues}
+
 def extract_kpis(text: str) -> dict[str, Any]:
+
     metrics = _nlp_kpi_extraction(text)
     # Plausibility checks
     if 'latency_ms' in metrics and metrics['latency_ms'] <= 0:

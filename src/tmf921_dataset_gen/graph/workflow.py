@@ -37,7 +37,8 @@ class WorkflowRunner:
 
         def diversify_node(state: GraphState) -> GraphState:
             sample_index = state["taxonomy_target"].get("sample_index", 0)
-            # GROUNDING-FIRST: Generate intent using retrieved context for immediate grounding
+            # Candidate generation stays deterministic; grounding is retrieved
+            # against the actual candidate intent immediately afterward.
             candidate = self.diversity.generate(
                 state["taxonomy_target"], 
                 sample_index, 
@@ -55,10 +56,17 @@ class WorkflowRunner:
             if self.retriever is None:
                 context = []
             else:
-                # Use taxonomy target to build a retrieval query instead of NL intent
                 target = state["taxonomy_target"]
-                query = f"{target['layer']} {target['traffic_profile']} {target['scenario_family']} {target.get('domain_context', '')}".strip()
-                context = self.retriever.retrieve(query, top_k=8, per_source=1)
+                nl_query = state.get("nl_intent", "")
+                query_parts = [
+                    nl_query,
+                    target["layer"],
+                    target["traffic_profile"],
+                    target["scenario_family"].replace("_", " "),
+                    target.get("domain_context", ""),
+                ]
+                query = " ".join(part for part in query_parts if part).strip()
+                context = self.retriever.retrieve(query, top_k=8)
             return {**state, "retrieved_context": context}
 
         def translate_node(state: GraphState) -> GraphState:
@@ -183,6 +191,16 @@ def run_generation(settings: Settings, count: int, output_dir: Path | None) -> l
         if len(accepted_records) >= count:
             break
     print(f"Completed: {len(accepted_records)} accepted records from {attempts} attempts", flush=True)
+    # Deduplicate by nl_intent
+    seen_nl_intents = set()
+    deduplicated_records = []
+    for record in accepted_records:
+        nl_intent = record.nl_intent
+        if nl_intent not in seen_nl_intents:
+            seen_nl_intents.add(nl_intent)
+            deduplicated_records.append(record)
+    accepted_records = deduplicated_records
+
     payloads = [record.model_dump(mode="json") for record in accepted_records]
 
     # Calculate diversity and bias

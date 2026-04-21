@@ -34,6 +34,10 @@ class TestNlpKpiExtraction:
         result = _nlp_kpi_extraction("Support for 1000 devices")
         assert result["device_count"] == 1000
 
+    def test_device_count_with_thousands_separator(self):
+        result = _nlp_kpi_extraction("Support for 37,606 devices across the campus")
+        assert result["device_count"] == 37606
+
     def test_device_count_no_false_positive(self):
         """Regression: 'for latency below 0.69 ms' should NOT produce device_count."""
         result = _nlp_kpi_extraction("looking for latency below 0.69 ms")

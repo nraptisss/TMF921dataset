@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from src.tmf921_dataset_gen.agents.critic import CriticRefinementAgent
-from src.tmf921_dataset_gen.config import Settings
-from src.tmf921_dataset_gen.validation.semantic_frame import build_intent_frame
+from tmf921_dataset_gen.agents.critic import CriticRefinementAgent
+from tmf921_dataset_gen.config import Settings
+from tmf921_dataset_gen.validation.semantic_frame import build_intent_frame
 
 
 @pytest.fixture

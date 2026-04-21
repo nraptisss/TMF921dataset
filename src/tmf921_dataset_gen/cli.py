@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from .config import Settings
-from .logging import configure_logging
+from .log_utils import configure_logging
 from .preflight import run_preflight
 
 LOGGER = logging.getLogger(__name__)

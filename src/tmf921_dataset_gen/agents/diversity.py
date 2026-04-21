@@ -100,10 +100,13 @@ class DiversityAgent:
                 match = re.search(pattern, full_text)
                 if match:
                     val = float(match.group(1))
-                    extracted_kpis[metric] = int(val) if val.is_integer() else val
+                    if metric == "device_count":
+                        extracted_kpis[metric] = int(val)
+                    else:
+                        extracted_kpis[metric] = int(val) if val.is_integer() else val
                     break
         
-        if len(extracted_kpis) < len(required_metrics):
+        if len(extracted_kpis) < len(required_metrics) and self.settings.grounding_mode != "grounded_corpus":
             sampled = self._sample_kpis(taxonomy_target, rng)
             for m in required_metrics:
                 if m not in extracted_kpis:
@@ -317,7 +320,7 @@ Baseline intent:
         seed = self._matching_seed(taxonomy_target["scenario_family"])
         
         # GROUNDING-FIRST: Try to extract KPIs from context first, then fall back to sampling
-        if retrieved_context:
+        if retrieved_context is not None:
             kpis = self._extract_kpis_from_context(retrieved_context, taxonomy_target, rng)
         else:
             kpis = self._sample_kpis(taxonomy_target, rng)

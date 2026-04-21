@@ -1,12 +1,13 @@
 """Unit tests for semantic frame validation and symbolic verification."""
 
 import pytest
-from src.tmf921_dataset_gen.validation.semantic_frame import (
+from tmf921_dataset_gen.validation.semantic_frame import (
     build_intent_frame,
     verify_semantic_alignment,
     payload_constraints,
     infer_operator,
     METRIC_SPECS,
+    canonical_context,
 )
 
 
@@ -274,6 +275,44 @@ class TestSemanticFrame:
 
         # Should detect the constraints correctly
         assert len(result["payload_constraints"]) == 2
+
+    def test_build_intent_frame_preserves_authoritative_source_kpis(self):
+        nl_intent = "Support massive IoT connectivity across the industrial campus"
+        taxonomy_target = {
+            "layer": "service",
+            "traffic_profile": "mmtc",
+            "scenario_family": "resilience",
+            "domain_context": "industrial campus",
+            "taxonomy_category": "service/mmtc/resilience",
+        }
+
+        frame = build_intent_frame(
+            nl_intent,
+            taxonomy_target,
+            {"device_count": 37606, "delivery_ratio_percent": 99.847},
+        )
+
+        metrics = {c["metric"]: c for c in frame["constraints"]}
+        assert metrics["device_count"]["value"] == 37606
+        assert metrics["device_count"]["source"] == "source_kpis"
+        assert metrics["delivery_ratio_percent"]["value"] == 99.847
+
+    def test_canonical_context_includes_authoritative_device_count(self):
+        taxonomy_target = {
+            "layer": "service",
+            "traffic_profile": "mmtc",
+            "scenario_family": "energy",
+            "domain_context": "smart city",
+            "taxonomy_category": "service/mmtc/energy",
+        }
+        frame = build_intent_frame(
+            "Optimize energy efficiency for the smart city deployment",
+            taxonomy_target,
+            {"device_count": 20959, "energy_kwh": 572},
+        )
+
+        context = canonical_context(frame)
+        assert "device_count exactly 20959 count" in context
 
 
 class TestTriggerThresholdOperatorInference:
